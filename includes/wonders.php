@@ -8,6 +8,8 @@
 		public $creator;
 		public $gameID;
 		public $deck;
+		public $server;
+		public $started = false;
 		public $age = 1;
 		public $turn = 1;
 		public $cardsChosen = array();
@@ -36,8 +38,8 @@
 		);
 
 		public function __construct(){
-			global $wonderCards;
-			$this->deck = new WonderDeck($wonderCards);
+			global $deck;
+			$this->deck = $deck;
 		}
 
 		public function addPlayer(IWebSocketConnection $user){
@@ -55,6 +57,10 @@
 
             // tell the players we're starting the game
             if(count($this->players) == $this->maxplayers){
+            	$this->started = true;
+            	$packet = packet(array('id' => $this->id), 'started');
+             	$this->server->broadcastAll($packet);
+
                 // give everyone some money/wonders to start
 				$wonderKeys = array_keys($this->wonders);
 				foreach($this->players as $player){
@@ -127,22 +133,28 @@
 		public function onMessage(IWebSocketConnection $user, $args){
 			switch($args['messageType']){
 				case 'cardplay':
-					$cardName = $args['value'];
+					$cardName = $args['value'][0];
 					// match what they sent with a Card object
 					foreach($user->hand as $card)
 					{
 						if($card->getName() == $cardName) $foundCard = $card;
 					}
 					if(isset($foundCard)){
-						if($user->canPlayCard($foundCard)){
+						if($args['value'][1] == 'trash' or $user->canPlayCard($foundCard, true)){
+							$user->isTrashing = $args['value'][1] == 'trash';
 							$this->cardsChosen[$user->getId()] = $foundCard;
 							$user->selectedCard = $foundCard;
 							// if everyone's played a card, execute cards and redeal/new turn
 							if(count($this->cardsChosen) == count($this->players)){
 								// execute effects of all played cards
 								foreach($this->players as $player){
-									$player->selectedCard->play($user, array() /*, more args here? */);
-									$player->cardsPlayed[] = $player->selectedCard;
+									if($player->isTrashing){
+										$player->addCoins(3);
+										$player->isTrashing = false;
+									} else {
+										$player->selectedCard->play($user, array() /*, more args here? */);
+										$player->cardsPlayed[] = $player->selectedCard;
+									}
 									unset($player->hand[array_search($player->selectedCard, $player->hand)]);
 									unset($player->selectedCard);
 								}
@@ -150,7 +162,8 @@
 								if($this->turn == 6){
 									// go into a new age
 									$this->age++;
-									// !IMPORTANT! MORE SHIT HAPPENS HERE
+									$this->turn = 1;
+									$this->deck->deal($this->age, $this->players);
 								} else {
 									// change hands and start a new turn
 									$this->turn++;
@@ -165,6 +178,12 @@
 					} else {
 						// error: you cheating motherfucker, you don't have that card in your hand
 					}
+				break;
+
+				case 'cardignore':
+					$user->isTrashing = false;
+					unset($user->selectedHard);
+					unset($this->cardsChosen[$user->getId()]);
 				break;
 
 				default:
