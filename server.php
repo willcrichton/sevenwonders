@@ -31,7 +31,8 @@ class WonderServer implements IWebSocketServerObserver{
                 $this->users[$user->getId()] = $user;
                 $user->sendString(packet("Guest {$user->getId()}", "myname"));
                 foreach($this->games as $game) 
-                        $user->sendString(packet(array('name' => $game->name, 'creator' => $game->creator->name, 'id' => $game->id), "newgame"));
+                        if(!$game->started)
+                                $user->sendString(packet(array('name' => $game->name, 'creator' => $game->creator->name, 'id' => $game->id), "newgame"));
 
                 $this->say("{$user->getId()} connected");
         }
@@ -55,6 +56,7 @@ class WonderServer implements IWebSocketServerObserver{
                                 $game->name = $arr['name'];
                                 $game->maxplayers = intval($arr['players']);
                                 $game->id = count($this->games);
+                                $game->server = $this;
                                 $game->addPlayer($user);
 
                                 // ERRORS NOT SHOWING ON CLIENT: FIX FIX FIX
@@ -68,13 +70,13 @@ class WonderServer implements IWebSocketServerObserver{
                                 $this->broadcastAll($packet, $user);
                         break;
 
-                        case 'joingame': 
+                        case 'joingame':
                                 if(!isset($user->game)){
                                         $id = intval($arr['id']);
-                                        if(isset($this->games[$id])){
+                                        if(isset($this->games[$id]) && !$this->games[$id]->started){
                                                 $this->games[$id]->addPlayer($user);
                                         } else {
-                                                // error game not exist
+                                                // error game not exist/game already started
                                         }
                                 } else {
                                         // error already in game
