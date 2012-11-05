@@ -64,6 +64,10 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 	public $hand;
 	public $selectedCard;
 	public $cardsPlayed = array();
+	public $military = 0;
+	public $points = 0;
+	public $science = array();
+	public $isTrashing = false;
 
 	public function canPlayCard(WonderCard $card, $sendError = false){
 		// check if it's a prerequisite for being free
@@ -79,13 +83,36 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 		// check if player has necessary resources
 		// !IMPORTANT! CHECK FOR BOUGHT TEMP RESOURCES 
 		foreach($card->getResourceCost() as $resource => $num){
-			if(!isset($this->permResources[$resource]) or $this->permResources[$resource] < $num){
+			if((!isset($this->permResources[$resource]) and !isset($this->tempResources[$resource])) or
+				( (isset($this->permResources[$resource]) ? array_sum($this->permResources[$resource]) : 0) + 
+					(isset($this->tempResources[$resource]) ? $this->tempResources[$resource] : 0) < $num)){
 				if($sendError) $this->sendString("Error: you don't have enough resources to play that card");
 				return false;
 			}
 		}
 
 		return true;
+	}
+
+	public function addCoins($coins){
+		$this->coins += $coins;
+		$this->sendString(packet($this->coins, 'coins'));
+	}
+
+	public function addResource($resource, $amount, $buyable = true){
+		$buyable = $buyable ? 'buy' : 'nobuy';
+		$this->permResources[$resource] = isset($this->permResources[$resource]) ? $this->permResources[$resource] : array();
+		$this->permResources[$resource][$buyable] = isset($this->permResources[$resource][$buyable]) ? 
+													$this->permResources[$resource][$buyable] + 1 : 
+													1;
+		$this->sendString(packet(array('resources' => $this->permResources), 'resources'));
+	}
+
+	public function addScience($element){
+		if(!isset($this->science[$element]))
+			$this->science[$element] = 1;
+		else
+			$this->science[$element]++;
 	}
 
 	public function __construct(WebSocketSocket $socket, array $headers) {
