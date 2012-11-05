@@ -87,7 +87,7 @@ body > a:last-child {
 
 		#myboard > div {
 			float: left;
-			width: 300px;
+			width: 230px;
 		}
 
 	#hand {
@@ -101,9 +101,10 @@ body > a:last-child {
 
 		.card {
 			float: left;
-			width: 200px;
+			width: 190px;
 			margin-left: -75px;
-			height: 300px;
+			height: 290px;
+			padding: 5px;
 			background: white;
 			border: 2px solid black;
 			position: relative;
@@ -118,13 +119,34 @@ body > a:last-child {
 		}
 
 		.card.selected { 
-			background: #ffffaa; 
 			bottom: 25px;
 			/*z-index: 2;*/
 		}
 
-		.card h1 { text-align: center; }
+		.card.highlighted {
+			background: #ffffaa; 
+		}
+
+		.card h1 { text-align: center; font-size: 24px; }
+
+		.card .options {
+			position: absolute;
+			bottom: 5px;
+			left: 5px;
+		}
 
 		.card:first-child {
 			margin-left: 0!important;
 		}
+
+		#resource_wrapper {
+			width: 100px;
+		}
+
+		#lastplayed {
+			width: 200px;
+		}
+
+			#lastplayed ul {
+				padding-left: 20px;
+			}
