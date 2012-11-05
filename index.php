@@ -5,6 +5,7 @@
 		<link href="style.css" rel="stylesheet" type="text/css" />
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
 		<script type="text/javascript" src="jquery-rotate.js"></script>
+		<script type="text/javascript" src="jquery.flip.min.js"></script>
 		<script type="text/javascript" src="game.js"></script>
 		<script type="text/javascript">
 			function createSocket(host){
@@ -29,7 +30,7 @@
 					socket = createSocket(host);
 					socket.onopen = function(msg){ 
 						console.log("WebSocket OPEN!"); 
-						if(localStorage.sevenwonders_name != ''){
+						if(localStorage.sevenwonders_name != '' && typeof localStorage.sevenwonders_name != 'undefined'){
 							changeName({name:{value: localStorage.sevenwonders_name}});
 							$('input[name=name]').attr('value', localStorage.sevenwonders_name);
 						}
@@ -50,7 +51,7 @@
 
 							case 'newgame':
 								if(status == "lobby"){
-									$('#opengames').append('<li>' + args.name + ' - ' + args.creator + 
+									$('#opengames').append('<li id="game' + args.id + '">' + args.name + ' - ' + args.creator + 
 										' (<a href="#" onclick="return joinGame(' + args.id + ')">Join</a>)</li>');
 								}
 							break;
@@ -67,6 +68,10 @@
 
 								game = new SevenWonders(socket, args);
 								console.log(game);
+							break;
+
+							case 'started':
+								$("#game" + args.id).css('display', 'none');
 							break;
 
 							default:
@@ -181,7 +186,12 @@
 				<div id="info">
 					<h2>My Info</h2>
 					Wonder: <span id="wondername"></span><br />
-					Coins: <span id="coins">3</span>
+					Age: <span id="age">1</span><br />
+					Coins: <span id="coins">3</span><br />
+				</div>
+				<div id="resource_wrapper">
+					<h2>Resources</h2>
+					<div id="resources"></div>
 				</div>
 				<div id="lastplayed">
 					<h2>Previously Played</h2>
