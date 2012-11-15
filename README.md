@@ -1,1 +1,1 @@
-This is a web port of the board game Seven Wonders. I do not own Seven Wonders or its trademark, nor do I own any of the game's assets. Seven Wonders Online is a purely educational endeavour to have fun programming.
+This is a web port of the board game Seven Wonders. I do not own Seven Wonders or its trademark, nor do I own any of the game's assets. Seven Wonders Online is a purely educational endeavour to have fun while programming.
