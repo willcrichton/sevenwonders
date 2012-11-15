@@ -12,7 +12,7 @@ function packet($args, $type){
 
 // Run from command prompt > php demo.php
 require_once("includes/websocket.server.php");
-require_once("includes/wonders.php");
+require_once("wonders.php");
 
 // Main server class
 class WonderServer implements IWebSocketServerObserver{
