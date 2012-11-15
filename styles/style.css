@@ -1,0 +1,335 @@
+* { margin: 0; padding: 0; }
+
+body { 
+	background: #ccc;
+	overflow: hidden;
+	font-family: 'Helvetica', Arial, sans-serif;
+}
+
+body > a {
+	overflow: hidden;
+	height: 0;
+	display: block;
+}
+
+#container {
+	margin: 0 auto; 
+	width: 1200px;
+	background: #f2f2f2; 
+	margin-top: 20px; 
+}
+
+#pregame {
+	padding: 20px;
+	background: #f2f2f2;
+	margin: 20px auto 0;
+	width: 600px;
+	box-shadow: 1px 1px 5px #444;
+	border-radius: 4px;
+	/*display: none;*/
+}
+
+	#pregame h1 { 
+		text-align: center;
+		/*margin-bottom: 20px;
+		text-shadow: 0px 2px 3px #aaa;*/
+		line-height: 1em;
+	}
+
+	#pregame h1 span {
+		font-size: 12px;
+		font-weight: normal;
+		text-shadow: none;
+		position: relative;
+		bottom: 15px;
+	}
+
+	#lobby { overflow: auto; }
+
+	#nickname { margin-bottom: 10px; }
+
+	#lobby .column {
+		border: 1px solid black;
+		padding: 5px;
+		float: left;
+		width: 275px;
+		-webkit-border-radius: 4px;
+		-moz-border-radius: 4px;
+	}
+
+		#lobby .column.left { margin-right: 25px; }
+
+	#lobby td:nth-child(odd) { text-align: right; }
+
+	#lobby td { padding: 3px; }
+
+	#lobby input[type=range] {
+		position: relative; 
+		top: 3px; 
+		margin-right: 3px;
+	}
+
+	#opengames { margin-top: 5px; }
+
+	#waiting {
+		display: none;
+	}
+
+	#waiting ul {
+		padding-left: 20px;
+	}
+
+#game { 
+	display: none;
+	overflow: hidden;
+	width: 1200px;
+	margin: 0 auto;
+	position: relative;
+	height: 100%;
+}
+
+	#wonder {
+		padding: 10px;
+		width: 780px;
+		height: 228px;
+		position: absolute;
+		bottom: 0;
+		left: 50%;
+		margin-left: -400px;
+		z-index: 3;
+		/*background: url(wonder.png) no-repeat center center;*/
+	}
+
+		#wonder .highlight {
+			position: absolute;
+			height: 110px;
+			width: 210px;
+			-webkit-border-radius: 17px;
+			-moz-border-radius: 17px;
+			box-shadow: 0 0 50px #E6ED64;
+			top: 159px;
+		}
+
+		#wonder #coins {
+			position: absolute;
+			top: 35px;
+			left: 220px;
+		}
+
+			#coins img.silver {
+				margin-left: -10px;
+			}
+
+			#coins img.gold {
+				margin-left: -20px;
+				margin-top: -5px;
+			}
+
+		#wonder #resources {
+			border: 1px solid black;
+			width: 140px;
+			height: 227px;
+			left: -167px; 
+			position: absolute;
+			top: 0;
+			background: #f3f3f3;
+			padding: 5px;
+			-webkit-border-radius: 4px;
+			-moz-border-radius: 4px;
+		}
+
+			#resources h1 {
+				font-size: 18px;
+				text-align: center;
+			}
+
+			#resources .button-wrapper {
+				position: absolute;
+				bottom: 5px;
+				left: 5px;	
+				padding: 4px;
+				width: 130px;
+			}
+
+			#resources .button {
+				line-height: 28px;
+				width: 130px;
+				height: 28px;
+			}
+
+	.neighbor {
+		height: 100%;
+		width: 133px;
+		background: white;
+		position: absolute;
+		top: 0;
+	}
+
+		.neighbor h1 {
+			-webkit-transform: rotate(90deg);
+			-moz-transform: rotate(90deg);
+			position: absolute;
+			top: 47%;
+			color: white;
+			text-shadow: 0 0 1px black;
+			font-size: 60px;
+			left: -25px;
+			opacity: 0.4;
+		}
+
+		.neighbor.left {
+			border-right: 2px solid #FC7979;
+			background: rgba(214, 30, 30, 0.1);
+			left: 0;
+		}
+
+			.neighbor.left h1 {
+				left: -16px;
+			}
+
+		.neighbor.right {
+			border-left: 2px solid #2CA600;
+			background: rgba(90, 242, 153, 0.3);
+			right: 0;
+		}
+
+			.neighbor.right h1 {
+				-webkit-transform: rotate(-90deg);
+				-moz-transform: rotate(-90deg);
+			}
+
+		.neighbor .card {
+			opacity: 0;
+		}
+
+	#hand {
+		width: 980px;
+		height: 405px;
+		padding: 1	0px;
+		/*background: #ddd;*/
+		margin: 75px auto;
+		position: relative;
+	}
+
+		.card {
+			width: 123px;
+			height: 190px;
+			padding: 5px;
+			background: transparent!important;
+			position: absolute;
+			z-index: 1;
+		}
+
+		.card img {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+			-webkit-border-radius: 10px;
+			-moz-border-radius: 10px;
+		}
+
+		/*.card:hover {
+			bottom: 25px;
+			-webkit-transition: bottom .1s linear;
+		}*/
+
+		.card .overlay {
+			position: absolute;
+			background: gray;
+			width: 81%;
+			height: 62%;
+			z-index: 4;
+			-webkit-border-radius: 10px;
+			-moz-border-radius: 10px;
+			bottom: 0px;
+			left: 0;
+			padding-top: 60%;
+			padding-left: 10%;
+			padding-right: 10%;
+			text-shadow: 0 0 1.5px rgba(200, 200, 200, 0.8);
+			text-align: center;
+			opacity: 0;
+			font-weight: bold;
+		}
+
+			.card .overlay h2 {
+				color: #a00; 
+				font-weight: bold;
+				text-shadow: 0 0 0;
+				font-size: 18px;
+				margin-top: -20px;
+			}
+
+		.card.selected { 
+			bottom: 25px;
+			z-index: 10000;
+		}
+
+		.card.highlighted {
+			background: #ffffaa; 
+		}
+
+		.card h1 { 
+			text-align: center; 
+			font-size: 15px; 
+			position: absolute;
+			top: -20px;
+			width: 100%;
+			text-shadow: 0 0 1px rgba(0,0,0.3);
+		}
+
+			.card.selected h1 {
+				font-size: 18px;
+				top: -25px;
+			}
+
+		.card .options {
+			position: absolute;
+			bottom: -30px;
+			text-align: center;
+			display: none;
+			overflow: auto;
+			width: 130%;
+			left: -5%;
+		}
+
+			.card .options a {
+				color: white;
+				text-shadow: 0 0 2px rgba(0,0,0,0.8);
+				display: block;
+				float: left;
+				padding: 3px 8px;
+				background: black;
+				text-decoration: none;
+				margin-right: 15px;
+				-webkit-border-radius: 4px;
+				-moz-border-radius: 4px;
+			}
+
+			.card .options a:last-child {
+				margin: 0;
+			}
+
+			.card .options a.undo {
+				display: none;
+				margin-left: 70px;
+			}
+
+		.card:first-child {
+			margin-left: 0!important;
+		}
+
+		#resource_wrapper {
+			width: 100px;
+		}
+
+		#lastplayed {
+			width: 200px;
+		}
+
+			#lastplayed ul {
+				padding-left: 20px;
+			}
