@@ -68,30 +68,46 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 	public $points = 0;
 	public $science = array();
 	public $isTrashing = false;
+	public $isBuildWonder = false;
+	public $leftPlayer;
+	public $rightPlayer;
 
 	public function canPlayCard(WonderCard $card, $sendError = false){
+		// check for duplicates
+		foreach($this->cardsPlayed as $cardPlayed){
+			if($cardPlayed->getName() == $card->getName()){
+				if($sendError) $this->sendError("You've already played this card");
+				return false;
+			}
+		}
+
 		// check if it's a prerequisite for being free
 		foreach($this->cardsPlayed as $cardPlayed)
 			if($cardPlayed->getName() == $card->getPrereq()) return true;
 
 		// check if player has enough money
 		if($card->getMoneyCost() > $this->coins){
-			if($sendError) $this->sendString('Error: you don\'t have enough coins to play that card');
+			if($sendError) $this->sendError("You don't have enough coins to play this card");
 			return false;
 		} 
 
 		// check if player has necessary resources
-		// !IMPORTANT! CHECK FOR BOUGHT TEMP RESOURCES 
+		// !IMPORTANT! CHECK FOR BOUGHT TEMP RESOURCES AND/OR PERMUTATIONS
 		foreach($card->getResourceCost() as $resource => $num){
 			if((!isset($this->permResources[$resource]) and !isset($this->tempResources[$resource])) or
 				( (isset($this->permResources[$resource]) ? array_sum($this->permResources[$resource]) : 0) + 
 					(isset($this->tempResources[$resource]) ? $this->tempResources[$resource] : 0) < $num)){
-				if($sendError) $this->sendString("Error: you don't have enough resources to play that card");
+				if($sendError) $this->sendError("You don't have enough resources to play this card");
 				return false;
 			}
 		}
 
 		return true;
+	}
+
+	public function sendError($error){
+		$packet = packet($error, 'error');
+		$this->sendString($packet);
 	}
 
 	public function addCoins($coins){
