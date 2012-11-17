@@ -52,7 +52,7 @@ SevenWonders.prototype = {
 						card.animate({
 							left: Math.random() * 2000 * (Math.random() > 0.5 ? -1 : 1),
 							bottom: Math.random() * 2000 * (Math.random() > 0.5 ? -1 : 1),
-							opacity: 0,
+						        opacity: 0
 						}, 500, function(){ $(this).remove(); });
 					} else {
 						var infoPos = $('#wonder').position();
@@ -221,7 +221,7 @@ SevenWonders.prototype = {
 					if(cardsPlayed[color] == undefined) cardsPlayed[color] = [];
 					var length = cardsPlayed[color].length;
 					img.appendTo('.neighbor.' + side);
-					var bottom = 0;
+					var bottom = -160;
 					var lastIndex = 0;
 					for(var i = self.colorOrder.indexOf(color); i >= 0; i--){
 						var col = self.colorOrder[i];
@@ -280,11 +280,27 @@ SevenWonders.prototype = {
 					img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
 					$('#coins').append(img);
 				}
-				break;
+			break;
 
 			case 'resources':
 				var resources = args.resources;
 				// do things here?
+			break;
+
+			case 'military':
+				console.log(args);
+				$('#military').html('');
+				var points = { 0: 'victoryminus1', 1: 'victory1', 3: 'victory3', 5: 'victory5' };
+				for(var i in points){
+					var n = args[i];
+					for(var j = 0; j < n; j++){
+						var img = $('<img src="images/' + points[i] + '.png" />');
+						img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
+						var rot = (Math.random() - 0.5) * 100;
+						$('#military').append(img);
+					}
+					if(n > 0) $('#military').append('<br />');
+				}
 			break;
 
 			case 'error':
@@ -293,7 +309,7 @@ SevenWonders.prototype = {
 					var card = $('.card.selected');
 					card.append('<div class="overlay"><h2>Error</h2>' + args.data + '</div>');
 					card.find('.overlay').animate({ opacity: '0.9' }, 200);
-					card.find('img').animate({opacity: '0.3'}, 200);;
+					card.find('img').animate({opacity: '0.3'}, 200);
 					var removeErr = function(card){
 						card.find('.overlay').animate({ opacity: 0 }, 200, function(){
 							$(this).remove();
