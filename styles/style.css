@@ -113,7 +113,8 @@ body > a {
 		#wonder #coins {
 			position: absolute;
 			top: 35px;
-			left: 220px;
+			left: 220px; 
+			width: 460px;
 		}
 
 			#coins img.silver {
@@ -123,6 +124,17 @@ body > a {
 			#coins img.gold {
 				margin-left: -20px;
 				margin-top: -5px;
+			}
+
+		#wonder #military {
+			position: absolute;
+			top: 45px;
+			left: 690px;
+			width: 90px;
+		}
+
+			#military img {
+				margin-left: -10px;
 			}
 
 		#wonder #resources {
@@ -265,7 +277,7 @@ body > a {
 
 		.card.selected { 
 			bottom: 25px;
-			z-index: 10000;
+			z-index: 10000!important;
 		}
 
 		.card.highlighted {
