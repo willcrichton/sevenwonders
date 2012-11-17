@@ -190,7 +190,7 @@ function parseFunc($command, $card, $player, $cards){
 function importCards($age){
 	global $deck;
 	$colors = array('br' => 'brown', 'gy' => 'grey', 'bl' => 'blue', 'y' => 'yellow', 'r' => 'red', 'gr' => 'green', 'p' => 'purple');
-	foreach(explode("\r", file_get_contents("age" . $age . ".csv")) as $line){
+	foreach(explode("\r", file_get_contents("cards/age" . $age . ".csv")) as $line){
 		$fields = str_getcsv($line);
 		$deck->addCard(array(
 			'name' => $fields[3],
