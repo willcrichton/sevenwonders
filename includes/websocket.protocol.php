@@ -65,6 +65,7 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 	public $selectedCard;
 	public $cardsPlayed = array();
 	public $military = 0;
+	public $militaryPoints = array(0,0,0,0,0,0);	
 	public $points = 0;
 	public $science = array();
 	public $isTrashing = false;
@@ -130,6 +131,23 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 		else
 			$this->science[$element]++;
 	}
+
+	public function evaluateMilitary($age){
+		if($this->leftPlayer->military < $this->military){
+			$this->militaryPoints[$age * 2 - 1] += 1;
+		} elseif($this->leftPlayer->military > $this->military){
+			$this->militaryPoints[0] += 1;
+		}
+
+		if($this->rightPlayer->military < $this->military){
+			$this->militaryPoints[$age * 2 - 1] += 1;
+		} elseif($this->rightPlayer->military > $this->military){
+			$this->militaryPoints[0] += 1;
+		}
+
+		$this->sendString(packet($this->militaryPoints, 'military'));
+	}
+
 
 	public function __construct(WebSocketSocket $socket, array $headers) {
 		$this->setHeaders($headers);
