@@ -1,7 +1,9 @@
 <?
 /* * * * * * * * * * * * * * * * * * * * * * * * * *
  * TO DO LIST
- * 1. Fix players getting wrong cards played for them?
+ * 1. Fix cards
+ *	 1a. Fix checking resource costs
+ *   1b. Add in effects for guilds, remaining cards
  * 2. Finish wonders
  *   2b. Let players choose a side
  *   2c. Let players build wonder stages
@@ -43,7 +45,6 @@ class SevenWonders {
 		array(
 			"name" => "Rhodos",
 			"resource" => "ore",
-
 		),
 		array(
 			"name" => "Alexandria",
@@ -159,6 +160,7 @@ class SevenWonders {
 	}
 
 	public function rotateHands($moveLeft){
+		// todo: simiplify this so it uses $player->leftNeighbor and rightNeighbor
 		if($moveLeft){
 			$temp = $this->players[count($this->players) - 1]->hand;
 			for($i = count($this->players) - 1; $i >= 0; $i--){
@@ -187,7 +189,7 @@ class SevenWonders {
 				}
 				if(isset($foundCard)){
 					if($args['value'][1] == 'trash' or $user->canPlayCard($foundCard, true)){
-						$this->log("User " . $user->name . " chose " . $foundCard->getName());
+						$this->log("User " . $user->name . " (" . $user->getId() . ") chose " . $foundCard->getName());
 						$user->isTrashing = $args['value'][1] == 'trash';
 						$this->cardsChosen[$user->getId()] = $foundCard;
 						$user->selectedCard = $foundCard;
@@ -200,7 +202,7 @@ class SevenWonders {
 							// execute effects of all played cards
 							foreach($this->players as $player){
 								if($player->isTrashing == true){
-									$this->log("User " . $user->name . " trashing " . $player->selectedCard->getName());
+									$this->log("User " . $user->name . " (" . $user->getId() . ") trashing " . $player->selectedCard->getName());
 									$player->addCoins(3);
 									$player->isTrashing = false;
 								//} elseif($player->isWonderBuilding == true){
@@ -211,8 +213,8 @@ class SevenWonders {
 									notify everyone else. GOGOGOOOOO
 									player PURPLE -> wonder -> use effect pink noooo why do PINK */
 								} else {
-									$this->log("User " . $user->name . " playing " . $player->selectedCard->getName());										
-									$player->selectedCard->play($user, array() /*, more args here? */);
+									$this->log("User " . $user->name . " (" . $user->getId() . ") playing " . $player->selectedCard->getName());										
+									$player->selectedCard->play($player, array() /*, more args here? */);
 									$player->cardsPlayed[] = $player->selectedCard;
 								}
 								unset($player->hand[array_search($player->selectedCard, $player->hand)]);
@@ -223,6 +225,12 @@ class SevenWonders {
 							if($this->turn == 6){
 								// go into a new age
 								$this->log("Ending age " . $this->age);
+
+								$this->log("Evaluating military");
+								foreach($this->players as $player){
+									$player->evaluateMilitary($this->age);
+								}
+
 								$this->age++;
 								$this->turn = 1;
 								$this->deck->deal($this->age, $this->players);
