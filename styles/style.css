@@ -12,6 +12,19 @@ body > a {
 	display: block;
 }
 
+h1.disconnect {
+	width: 660px;
+	position: absolute;
+	left: 50%;
+	margin-left: -330px;
+	top: 50%;
+	margin-top: -120px;
+}
+
+	h1.disconnect span {
+		color: red;
+	}
+
 #container {
 	margin: 0 auto; 
 	width: 1200px;
@@ -137,7 +150,7 @@ body > a {
 				margin-left: -10px;
 			}
 
-		#wonder #resources {
+		#wonder #resources, #wonder #resourceSelect {
 			border: 1px solid black;
 			width: 140px;
 			height: 227px;
@@ -148,14 +161,16 @@ body > a {
 			padding: 5px;
 			-webkit-border-radius: 4px;
 			-moz-border-radius: 4px;
+			z-index: 3;
 		}
 
-			#resources h1 {
+			#resources h1, #resourceSelect h1 {
 				font-size: 18px;
 				text-align: center;
+				margin-bottom: 5px;
 			}
 
-			#resources .button-wrapper {
+			#resources .button-wrapper, #resourceSelect .button-wrapper {
 				position: absolute;
 				bottom: 5px;
 				left: 5px;	
@@ -163,11 +178,37 @@ body > a {
 				width: 130px;
 			}
 
-			#resources .button {
+			#resources .button, #resourceSelect .button {
 				line-height: 28px;
 				width: 130px;
 				height: 28px;
 			}
+
+		#wonder #resourceSelect {
+			z-index: 2;
+			font-size: 14px;
+			overflow: hidden;
+		}
+
+			#resourceSelect input[type=text]{
+				width: 15px;
+				text-align: center;
+			}
+
+			#resourceSelect td:nth-child(2){
+				padding-right: 12px;
+			}
+
+			#resourceSelect h2 {
+				font-size: 16px;
+				margin-top: 15px;
+			}
+
+			#resourceSelect .button-wrapper {
+				bottom: 20px;
+			}
+
+
 
 	.neighbor {
 		height: 100%;
