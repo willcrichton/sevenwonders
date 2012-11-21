@@ -55,7 +55,7 @@ class WonderCard {
 			$user->addCoins(-1 * $this->moneyCost);
 		// calculate resources/buying from neighbors here
 		// include temp resources
-		parseFunc($this->command, $this, $user, $args);
+		return parseFunc($this->command, $this, $user, $args);
 	}
 
 	public function __call($closure, $args)
@@ -140,6 +140,7 @@ function getResourceCost($str){
 	$resources = array(
 		'S' => 'stone',
 		'T' => 'wood',
+		'W' => 'wood',
 		'O' => 'ore',
 		'C' => 'clay',
 		'L' => 'linen',
@@ -167,34 +168,60 @@ function getNumPlayers($fields){
 	return $numplayers;
 }
 
-function parseFunc($command, $card, $player, $cards){
-	if(strpos($command, 'X') !== false){
-		$player->military += strlen($command);
-	} elseif(strpos($command, "{") !== false){
-		// player gets victory points--do we need to do anything?
-		$player->points += intval($command[1]);
-	} elseif(preg_match('/<|>/', $command)){
-		// buy from neighbors -- IMPLEMENT!!!!!
-	} elseif(preg_match('/&|@|#/', $command)){
-		$player->addScience($command);
-	} elseif(preg_match('/[0-9]/', $command)){
-		$player->addCoins(intval($command));
-	} else {
-		// CHECK FOR DOUBLE RESOURCE VS TWO OPTION RESOURCE
-		foreach(getResourceCost($command) as $resource => $amount){
-			$player->addResource($resource, $amount, $card->getColor() != 'yellow');
-		}
+function arrowsToDirection($str){
+	$directions = array();
+	for($i = 0; $i < strlen($str); $i++){
+		$directions[] = $str[$i] == '<' ? 'left' : ($str[$i] == '>' ? 'right' : 'self');
+	}
+	return $directions;
+}
+
+function parseFunc($command, $card, $player, $ignore_this){
+	switch($card->getColor()){
+		case 'red':
+			$player->military += strlen($command);
+		break;
+		case 'blue':
+			// player gets victory points--do we need to do anything?
+			$player->points += intval($command);
+		break;
+		case 'yellow':
+			if($card->getAge() == 1){
+				if(preg_match('/[0-9]/', $command))
+					$player->addCoins(intval($command));
+				else {
+					$args = explode(' ', $command);
+					$directions = arrowsToDirection($args[0]);
+					$resources = getResourceCost($args[1]);
+					foreach($resources as $resource => $amount){
+						foreach($directions as $dir){
+							$player->discounts[$dir][$resource] = !isset($player->discounts[$dir][$resource]) ? 1 
+																	: $player->discounts[$dir][$resource] + 1;
+						}
+					}
+				}
+			}
+			
+		break;
+		case 'green':
+			$player->addScience($command);
+		break;
+		default:
+			// CHECK FOR DOUBLE RESOURCE VS TWO OPTION RESOURCE
+			foreach(getResourceCost($command) as $resource => $amount){
+				$player->addResource($resource, $amount, $card->getColor() != 'yellow');
+			}
+		break;
 	}
 }
 
 function importCards($age){
 	global $deck;
-	$colors = array('br' => 'brown', 'gy' => 'grey', 'bl' => 'blue', 'y' => 'yellow', 'r' => 'red', 'gr' => 'green', 'p' => 'purple');
 	foreach(explode("\r", file_get_contents("cards/age" . $age . ".csv")) as $line){
 		$fields = str_getcsv($line);
 		$deck->addCard(array(
 			'name' => $fields[3],
-			'color' => $colors[$fields[2]],
+			'color' => $fields[2],
 			'moneyCost' => preg_match('/[0-9]/', $fields[1], $matches) ? 1 : 0,
 			'resourceCost' => getResourceCost($fields[1]),
 			'freePrereq' => $fields[0],
