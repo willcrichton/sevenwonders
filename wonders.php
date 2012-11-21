@@ -13,8 +13,6 @@
  *   3a. Buy resources from neighbors
  *   3b. Choose which neighbor to buy from
  *   3c. Add interface to see info about non-neighbors
- * 4. Add military battles
- * 6. Show military tokens on wonder
  * 7. Transition between ages
  * 8. End game
  *    8a. Calculate victory points
@@ -219,6 +217,7 @@ class SevenWonders {
 								}
 								unset($player->hand[array_search($player->selectedCard, $player->hand)]);
 								unset($player->selectedCard);
+								$player->tempResources = array();
 							}
 
 							$this->cardsChosen = array();
@@ -253,6 +252,48 @@ class SevenWonders {
 				$user->isTrashing = false;
 				unset($user->selectedHard);
 				unset($this->cardsChosen[$user->getId()]);
+			break;
+
+			case 'trade':
+				$this->log("User " . $user->name . " is trading");
+				$leftTotal = 0;
+				foreach($args['left'] as $resource => $amount){
+					if(!$user->leftPlayer->canSellResource($resource)){
+						$user->sendError("Left player doesn't have those resources");
+						return;
+					} 
+					$discount = isset($user->discounts['left'][$resource]) ? $user->discounts['left'][$resource] : 0;
+					$leftTotal += max((2 - $discount) * $amount, 0);
+				}
+
+				$rightTotal = 0;
+				foreach($args['right'] as $resource => $amount){
+					if(!$user->rightPlayer->canSellResource($resource)){
+						$user->sendError("Right player doesn't have those resources");
+						return;
+					} 
+					$discount = isset($user->discounts['right'][$resource]) ? $user->discounts['right'][$resource] : 0;
+					$rightTotal += max((2 - $discount) * $amount, 0);
+				}
+
+				$total = $leftTotal + $rightTotal;
+				// factor in yellow cards into total cost here
+				if($total > $user->coins){
+					$user->sendError("You don't have enough money to buy those resources");
+					return;
+				}
+
+				$user->addCoins(-1 * $total);
+				if($leftTotal > 0) $user->leftPlayer->addCoins($leftTotal);
+				if($rightTotal > 0) $user->rightPlayer->addCoins($rightTotal);
+				// give left/right neighbors coins accordingly
+				foreach(array('left', 'right') as $side){
+					foreach($args[$side] as $resource => $amount){
+						$user->tempResources[$resource] = $amount;
+					}
+				}
+
+				$user->sendString(packet(array('resources' => $user->tempResources), 'bought'));
 			break;
 
 			default:
