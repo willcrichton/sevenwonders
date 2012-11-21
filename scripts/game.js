@@ -19,6 +19,28 @@ var SevenWonders = function(socket, args){
 	var img = $('<img src="images/coin3.png" />');
 	img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
 	$('#coins').append(img);
+
+	var panelOut = false;
+	$('#resources a').click(function(){
+		if(panelOut){
+			$('#resourceSelect').animate({height: $('#resources').height(), top: 0}, 500);
+		} else {
+			$('#resourceSelect').animate({height: $('#resources').height() * 1.4, top: -$('#resources').height() * 1.4}, 500);
+		}
+		panelOut = !panelOut;
+	});
+
+	var self = this;
+	$('#resourceSelect a').click(function(){
+		var info = {'left': {}, 'right': {}};
+		$('#resourceSelect input[type=text]').each(function(){
+			var args = $(this).attr('name').split('_');
+			if(parseInt($(this).attr('value')) > 0){
+				info[args[0]][args[1]] = parseInt($(this).attr('value'));
+			}
+		})
+		self.send(info, 'trade')
+	})
 }
 
 SevenWonders.prototype = {
@@ -37,6 +59,7 @@ SevenWonders.prototype = {
 			case 'hand':
 				args.cards = $.map(args.cards, function(k,v){ return [k]; });
 
+				$('#resources #current').html('');
 				$('#age').html(args.age);
 				$('.card').addClass('ignore');
 				$('.card:not(.highlighted, .played)').fadeOut(500, function(){
@@ -300,6 +323,15 @@ SevenWonders.prototype = {
 						$('#military').append(img);
 					}
 					if(n > 0) $('#military').append('<br />');
+				}
+			break;
+
+			case 'bought':
+				$('#resourceSelect').animate({height: $('#resources').height(), top: 0}, 500);
+				$('#current').html();
+				for(var resource in args.resources){
+					var amt = args.resources[resource];
+					$('#current').append(resource + ': ' + amt + '<br />');
 				}
 			break;
 
