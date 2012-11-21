@@ -2,11 +2,12 @@
 <html>
 	<head>
 		<title>Test</title>
-		<link href="mediakit.css" rel="stylesheet" type="text/css" />
-		<link href="style.css" rel="stylesheet" type="text/css" />
-		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+		<link href="styles/mediakit.css" rel="stylesheet" type="text/css" />
+		<link href="styles/style.css" rel="stylesheet" type="text/css" />
+		<!--script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script-->
+		<script type="text/javascript" src="scripts/jquery-1.6.2.js"></script>
 		<script type="text/javascript" src="scripts/jquery-rotate.js"></script>
-		<script type="text/javascript" src="scriptsjquery.flip.min.js"></script>
+		<script type="text/javascript" src="scripts/jquery.flip.min.js"></script>
 		<script type="text/javascript" src="scripts/jquery.easing.js"></script>
 		<script type="text/javascript" src="scripts/html5slider.js"></script>
 		<script type="text/javascript" src="scripts/game.js"></script>
@@ -85,7 +86,11 @@
 							break;
 						}
 					}
-					socket.onclose = function(msg){ console.log("WebSocket CLOSED..."); }
+					socket.onclose = function(msg){ 
+						console.log("WebSocket CLOSED...");
+						$('body *').remove();
+						$('body').append('<h1 class="disconnect"><span>ERROR</span>: The game server is down or your connection was severed. Try refreshing.</h1>') 
+					}
 				} catch(ex) {
 					console.log(ex);
 				}
@@ -180,14 +185,69 @@
 			<div id="wonder">
 				<div id="resources">
 					<h1>RESOURCES</h1>
-					<div id="current">
-
-					</div>
+					<div id="current"></div>
 					<div class="button-wrapper">
 						<a href="#" class="button light">Trade</a>
 					</div>
 				</div>
+				<div id="resourceSelect">
+					<h1>TRADE</h1>
+					<h2>Left Player</h2>
+					<table>
+						<tr>
+							<td>Wood:</td>
+							<td><input type="text" value="0" name="left_wood" /></td>
+							<td>Glass:</td>
+							<td><input type="text" value="0" name="left_glass" /></td>
+						</tr>
+						<tr>
+							<td>Clay:</td>
+							<td><input type="text" value="0" name="left_clay" /></td>
+							<td>Paper:</td>
+							<td><input type="text" value="0" name="left_paper" /></td>
+						</tr>
+						<tr>
+							<td>Ore:</td>
+							<td><input type="text" value="0" name="left_ore" /></td>
+							<td>Cloth:</td>
+							<td><input type="text" value="0" name="left_linen" /></td>
+						</tr>
+						<tr>
+							<td>Stone:</td>
+							<td><input type="text" value="0" name="left_stone" /></td>
+						</tr>
+					</table>
+					<h2>Right Player</h2>
+					<table>
+						<tr>
+							<td>Wood:</td>
+							<td><input type="text" value="0" name="right_wood" /></td>
+							<td>Glass:</td>
+							<td><input type="text" value="0" name="right_glass" /></td>
+						</tr>
+						<tr>
+							<td>Clay:</td>
+							<td><input type="text" value="0" name="right_clay" /></td>
+							<td>Paper:</td>
+							<td><input type="text" value="0" name="right_paper" /></td>
+						</tr>
+						<tr>
+							<td>Ore:</td>
+							<td><input type="text" value="0" name="right_ore" /></td>
+							<td>Cloth:</td>
+							<td><input type="text" value="0" name="right_linen" /></td>
+						</tr>
+						<tr>
+							<td>Stone:</td>
+							<td><input type="text" value="0" name="right_stone" /></td>
+						</tr>
+					</table>
+					<div class="button-wrapper">
+						<a href="#" class="button light">Submit</a>
+					</div>
+				</div>
 				<div id="coins"></div>
+				<div id="military"></div>
 			</div>
 			<div class="neighbor left">
 				<h1>LEFT</h1>
