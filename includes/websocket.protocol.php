@@ -72,6 +72,7 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 	public $isBuildWonder = false;
 	public $leftPlayer;
 	public $rightPlayer;
+	public $discounts = array('left' => array(), 'right' => array());
 
 	public function canPlayCard(WonderCard $card, $sendError = false){
 		// check for duplicates
@@ -104,6 +105,11 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 		}
 
 		return true;
+	}
+
+	public function canSellResource($resource){
+		if(!isset($this->permResources[$resource])) return false;
+		return isset($this->permResources[$resource]['buy']);
 	}
 
 	public function sendError($error){
