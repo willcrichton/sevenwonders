@@ -2,7 +2,7 @@
 
 body { 
 	background: #ccc;
-	overflow: hidden;
+	/*overflow: hidden;*/
 	font-family: 'Helvetica', Arial, sans-serif;
 }
 
@@ -94,7 +94,7 @@ h1.disconnect {
 
 #game { 
 	display: none;
-	overflow: hidden;
+	overflow: auto;
 	width: 1200px;
 	margin: 0 auto;
 	position: relative;
