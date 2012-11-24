@@ -73,9 +73,9 @@ SevenWonders.prototype = {
 					if(self.trashing){
 						this.trashing = false;
 						card.animate({
-							left: Math.random() * 2000 * (Math.random() > 0.5 ? -1 : 1),
-							bottom: Math.random() * 2000 * (Math.random() > 0.5 ? -1 : 1),
-						        opacity: 0
+							left: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
+							bottom: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
+						    opacity: 0
 						}, 500, function(){ $(this).remove(); });
 					} else {
 						var infoPos = $('#wonder').position();
