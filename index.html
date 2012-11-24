@@ -28,7 +28,7 @@
 			var status = "lobby";
 			var game = undefined;
 			$(document).ready(function(){
-				$("#game").css({width: $(window).width(), height: $(window).height()});
+				$("#game").css({width: Math.max($(window).width(), 1420), height: Math.max($(window).height(), 730)});
 				var host = "ws://" + window.location.host + ":12345";
 				try {
 					socket = createSocket(host);
