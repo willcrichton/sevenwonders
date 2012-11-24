@@ -7,7 +7,7 @@ URL: www.carbonnine.com
 /*Global styles & font stacks*/
 
 body {
-	font-family: Helvetica, Arial, sans-serif;
+	font-family: Georgia, Helvetica, Arial, sans-serif;
 	background: #F3F3F3 repeat;
 }
 
@@ -126,7 +126,7 @@ a:active {
 
 .button-wrapper {
 	width: 165px;
-	background: #E0E0E0;
+	background: #E3E3DA;
 	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#E9E9E9', endColorstr='#D7D7D7');
 	background: -webkit-gradient(linear, left top, left bottom, from(#E9E9E9), to(#D7D7D7)); 
 	background: -moz-linear-gradient(top,  #E9E9E9,  #D7D7D7); 
@@ -147,7 +147,7 @@ a.button {
 	display: block;
 	width: 165px;
 	height: 35px;
-	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-family: Georgia, "Helvetica Neue", Helvetica, Arial, sans-serif;
 	font-size: 14px;
 	text-align: center;
 	line-height: 34px;
@@ -316,7 +316,7 @@ ul.tabs li:last-child a {
 
 ul.menu {
 	width: 160px;
-	background: #E0E0E0;
+	background: #E3E3DA;
 	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#E9E9E9', endColorstr='#D7D7D7');
 	background: -webkit-gradient(linear, left top, left bottom, from(#E9E9E9), to(#D7D7D7)); 
 	background: -moz-linear-gradient(top,  #E9E9E9,  #D7D7D7); 
@@ -344,7 +344,7 @@ ul.menu li a {
 	display: block;
 	width: 160px;
 	height: 35px;
-	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-family: Georgia, "Helvetica Neue", Helvetica, Arial, sans-serif;
 	font-size: 14px;
 	text-align: center;
 	line-height: 34px;
@@ -588,7 +588,7 @@ tr:last-child td:last-child {
 /* Light */
 
 a.light, input.light, ul.light li a, th.light {
-	background: #F5F5F5;
+	background: #E3E3DA;
 	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFFFFF', endColorstr='#ECECEC');
 	background: -webkit-gradient(linear, left top, left bottom, from(#FFFFFF), to(#ECECEC)); 
 	background: -moz-linear-gradient(top,  #FFFFFF,  #ECECEC); 

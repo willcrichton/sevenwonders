@@ -1,9 +1,21 @@
+@font-face {
+    font-family: 'RomanSD';
+    src: url('fonts/roman_sd-webfont.eot');
+    src: url('fonts/roman_sd-webfont.eot?#iefix') format('embedded-opentype'),
+         url('fonts/roman_sd-webfont.woff') format('woff'),
+         url('fonts/roman_sd-webfont.ttf') format('truetype'),
+         url('fonts/roman_sd-webfont.svg#roman_sdregular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
 * { margin: 0; padding: 0; }
 
 body { 
-	background: #ccc;
+	background: #E7E3D3 url(../images/paper.jpg) no-repeat center top;
 	/*overflow: hidden;*/
-	font-family: 'Helvetica', Arial, sans-serif;
+	font-family: 'Georgia', 'Helvetica', Arial, sans-serif;
 }
 
 body > a {
@@ -12,13 +24,20 @@ body > a {
 	display: block;
 }
 
+h1, h2, h3 {
+	font-family: 'RomanSD', serif;
+	word-spacing: -0.3em;
+	color: #706652;
+}
+
 h1.disconnect {
-	width: 660px;
+	width: 750px;
 	position: absolute;
 	left: 50%;
-	margin-left: -330px;
+	margin-left: -375px;
 	top: 50%;
 	margin-top: -120px;
+	font-size: 40px;
 }
 
 	h1.disconnect span {
@@ -28,13 +47,12 @@ h1.disconnect {
 #container {
 	margin: 0 auto; 
 	width: 1200px;
-	background: #f2f2f2; 
 	margin-top: 20px; 
 }
 
 #pregame {
 	padding: 20px;
-	background: #f2f2f2;
+	background: #F2F0E6;
 	margin: 20px auto 0;
 	width: 600px;
 	box-shadow: 1px 1px 5px #444;
@@ -46,7 +64,8 @@ h1.disconnect {
 		text-align: center;
 		/*margin-bottom: 20px;
 		text-shadow: 0px 2px 3px #aaa;*/
-		line-height: 1em;
+		line-height: 40px;
+		margin-bottom: -10px;
 	}
 
 	#pregame h1 span {
@@ -55,6 +74,7 @@ h1.disconnect {
 		text-shadow: none;
 		position: relative;
 		bottom: 15px;
+		word-spacing: -0.1em;
 	}
 
 	#lobby { overflow: auto; }
@@ -62,10 +82,10 @@ h1.disconnect {
 	#nickname { margin-bottom: 10px; }
 
 	#lobby .column {
-		border: 1px solid black;
-		padding: 5px;
+		border: 2px solid #968A71;
+		padding: 3px 10px;
 		float: left;
-		width: 275px;
+		width: 263px;
 		-webkit-border-radius: 4px;
 		-moz-border-radius: 4px;
 	}
@@ -75,6 +95,10 @@ h1.disconnect {
 	#lobby td:nth-child(odd) { text-align: right; }
 
 	#lobby td { padding: 3px; }
+
+	#lobby input[type=text] {
+		background: #F5F5F5;
+	}
 
 	#lobby input[type=range] {
 		position: relative; 
@@ -157,7 +181,7 @@ h1.disconnect {
 			left: -167px; 
 			position: absolute;
 			top: 0;
-			background: #f3f3f3;
+			background: #F2F0E6;
 			padding: 5px;
 			-webkit-border-radius: 4px;
 			-moz-border-radius: 4px;
@@ -215,6 +239,7 @@ h1.disconnect {
 		width: 133px;
 		background: white;
 		position: absolute;
+		overflow: auto;
 		top: 0;
 	}
 
@@ -231,24 +256,25 @@ h1.disconnect {
 		}
 
 		.neighbor.left {
-			border-right: 2px solid #FC7979;
-			background: rgba(214, 30, 30, 0.1);
+			border-right: 2px solid #CCB593;
+			background: rgba(204, 179, 147, 0.9);
 			left: 0;
 		}
 
 			.neighbor.left h1 {
-				left: -16px;
+				left: -10px;
 			}
 
 		.neighbor.right {
-			border-left: 2px solid #2CA600;
-			background: rgba(90, 242, 153, 0.3);
+			border-left: 2px solid #C3BBAB;
+			background: rgba(196, 187, 172, 0.9);
 			right: 0;
 		}
 
 			.neighbor.right h1 {
 				-webkit-transform: rotate(-90deg);
 				-moz-transform: rotate(-90deg);
+				left: -34px;
 			}
 
 		.neighbor .card {
@@ -331,6 +357,8 @@ h1.disconnect {
 			position: absolute;
 			top: -20px;
 			width: 100%;
+			color: black;
+			letter-spacing: -1px;
 			text-shadow: 0 0 1px rgba(0,0,0.3);
 		}
 
