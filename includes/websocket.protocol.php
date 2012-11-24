@@ -154,6 +154,22 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 		$this->sendString(packet($this->militaryPoints, 'military'));
 	}
 
+	public function calcPoints(){
+		// blue cards
+		$total = $this->points;
+		// coins
+		$total += Math.floor($this->coins / 3);
+		// military
+		foreach($this->militaryPoints as $mult => $tokens)
+			$total += ($mult == 0 ? -1 : $mult) * $tokens;
+		// science
+		foreach($this->science as $science => $amount){
+			$total += $amount * $amount;
+		}
+		$total += min($this->science) * 7;
+		// do a check for 3rd age yellow/guild cards here
+		return $total;
+	}
 
 	public function __construct(WebSocketSocket $socket, array $headers) {
 		$this->setHeaders($headers);
