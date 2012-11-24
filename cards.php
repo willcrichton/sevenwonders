@@ -179,12 +179,13 @@ function arrowsToDirection($str){
 function parseFunc($command, $card, $player, $ignore_this){
 	switch($card->getColor()){
 		case 'red':
-			$player->military += strlen($command);
+			$player->military += intval($command);
 		break;
+
 		case 'blue':
-			// player gets victory points--do we need to do anything?
 			$player->points += intval($command);
 		break;
+
 		case 'yellow':
 			if($card->getAge() == 1){
 				if(preg_match('/[0-9]/', $command))
@@ -200,13 +201,35 @@ function parseFunc($command, $card, $player, $ignore_this){
 						}
 					}
 				}
+			} elseif($card->getAge() == 3){
+				preg_match('/\((.)\)\{(.)\} (.+)?/', $command, $matches);
+				// when/how do we want to evaluate points??
+				$coins = $matches[1]; $color = $matches[3];
+				$coinsToGive = 0; 
+				if($color == 'wonder'){
+					// check for wonder construction here
+				} else {
+					foreach($player->cardsPlayed as $card){
+						if($card->getColor() == $color){
+							$coinsToGive += $coins;
+							//$pointsToGive += $points;
+						}
+					}
+				}
+				$player->addCoins($coins);
 			}
-			
 		break;
+
 		case 'green':
-			$player->addScience($command);
+			$player->addScience(intval($command));
 		break;
-		default:
+
+		case 'purple':
+			// none of these give coins or anything, so don't need to check
+			// until the end
+		break;
+
+		case 'brown':
 			// CHECK FOR DOUBLE RESOURCE VS TWO OPTION RESOURCE
 			foreach(getResourceCost($command) as $resource => $amount){
 				$player->addResource($resource, $amount, $card->getColor() != 'yellow');
@@ -223,10 +246,10 @@ function importCards($age){
 			'name' => $fields[3],
 			'color' => $fields[2],
 			'moneyCost' => preg_match('/[0-9]/', $fields[1], $matches) ? 1 : 0,
-			'resourceCost' => getResourceCost($fields[1]),
+			'resourceCost' => array(), //getResourceCost($fields[1]),
 			'freePrereq' => $fields[0],
 			'age' => $age,
-			'numPlayers' => $fields[2] == 'p' ? array(1) : getNumPlayers($fields),
+			'numPlayers' => $fields[2] == 'purple' ? array(1) : getNumPlayers($fields),
 			'command' => $fields[4]
 		));
 	}
