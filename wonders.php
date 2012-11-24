@@ -7,17 +7,15 @@
  * 2. Finish wonders
  *   2b. Let players choose a side
  *   2c. Let players build wonder stages
- *   2d. Add wonder stage notification (how do?)
  *   2e. Add functionality to wonder stages
  * 3. Add neighbors
- *   3a. Buy resources from neighbors
- *   3b. Choose which neighbor to buy from
  *   3c. Add interface to see info about non-neighbors
  * 7. Transition between ages
  * 8. End game
  *    8a. Calculate victory points
  *    8b. Animation/show victor
  * 9. Button to show all your current cards
+ * 10. Highlight play for free cards
  * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 require_once("cards.php");
