@@ -177,10 +177,10 @@ h1.disconnect {
 		#wonder #resources, #wonder #resourceSelect {
 			border: 1px solid black;
 			width: 140px;
-			height: 227px;
+			height: 150px;
 			left: -167px; 
 			position: absolute;
-			top: 0;
+			bottom: 5px;
 			background: #F2F0E6;
 			padding: 5px;
 			-webkit-border-radius: 4px;
@@ -239,7 +239,7 @@ h1.disconnect {
 		width: 133px;
 		background: white;
 		position: absolute;
-		overflow: auto;
+		overflow: hidden;
 		top: 0;
 	}
 
