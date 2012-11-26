@@ -38,6 +38,11 @@ interface IWebSocketConnection {
 	public function disconnect();
 }
 
+class Resource {
+	public $buyable = true;
+	public $resources;
+}
+
 abstract class WebSocketConnection implements IWebSocketConnection {
 	protected $_headers = array();
 
@@ -74,6 +79,40 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 	public $rightPlayer;
 	public $discounts = array('left' => array(), 'right' => array());
 
+	public function checkResourceCost($cost, $resources){
+		$allZero = true;
+		foreach($cost as $resource => $amount){
+			if($amount > 0){
+				$allZero = false;
+				break;
+			} 
+		}
+		if($allZero) return true;
+		if(count($resources) == 0) return false;
+
+		$resource = array_pop($resources);
+		if(is_array($resource->resources)){
+			foreach($resource->resources as $possibility){
+				if(!isset($cost[$possibility])) continue;
+				$cost[$possibility]--;
+				if($this->checkResourceCost($cost, $resources)) return true;
+				$cost[$possibility]++;
+			}
+			return $this->checkResourceCost($cost, $resources);
+		} else {
+			$possibility = $resource->resources;
+			if(isset($cost[$possibility])){
+				$cost[$resource->resources]--;
+				if($this->checkResourceCost($cost, $resources)) return true;
+				$cost[$possibility]++;
+			} else {
+				return $this->checkResourceCost($cost, $resources);
+			}
+		}
+
+		return false;
+	}
+
 	public function canPlayCard(WonderCard $card, $sendError = false){
 		// check for duplicates
 		foreach($this->cardsPlayed as $cardPlayed){
@@ -94,16 +133,13 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 		} 
 
 		// check if player has necessary resources
-		// !IMPORTANT! CHECK FOR BOUGHT TEMP RESOURCES AND/OR PERMUTATIONS
-		foreach($card->getResourceCost() as $resource => $num){
-			if((!isset($this->permResources[$resource]) and !isset($this->tempResources[$resource])) or
-				( (isset($this->permResources[$resource]) ? array_sum($this->permResources[$resource]) : 0) + 
-					(isset($this->tempResources[$resource]) ? $this->tempResources[$resource] : 0) < $num)){
-				if($sendError) $this->sendError("You don't have enough resources to play this card");
-				return false;
-			}
+		$cost = $card->getResourceCost();
+		$availableResources = array_combine($this->permResources, $this->tempResources);
+		if(!$this->checkResourceCost($cost, $availableResources)){
+			if($sendError) $this->sendError("You don't have enough resources to play this card");
+			return false;
 		}
-
+		
 		return true;
 	}
 
@@ -122,13 +158,14 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 		$this->sendString(packet($this->coins, 'coins'));
 	}
 
-	public function addResource($resource, $amount, $buyable = true){
-		$buyable = $buyable ? 'buy' : 'nobuy';
-		$this->permResources[$resource] = isset($this->permResources[$resource]) ? $this->permResources[$resource] : array();
-		$this->permResources[$resource][$buyable] = isset($this->permResources[$resource][$buyable]) ? 
-													$this->permResources[$resource][$buyable] + 1 : 
-													1;
-		$this->sendString(packet(array('resources' => $this->permResources), 'resources'));
+	public function addResource($resources, $amount, $buyable = true){
+		for($i = 0; $i < $amount; $i++){
+			$resource = new Resource();
+			$resource->buyable = $buyable;
+			$resource->resources = $resources;
+			$this->permResources[] = $resource;
+			$this->sendString(packet(array('resources' => $this->permResources), 'resources'));
+		}
 	}
 
 	public function addScience($element){
@@ -157,17 +194,23 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 	public function calcPoints(){
 		// blue cards
 		$total = $this->points;
+	
 		// coins
 		$total += Math.floor($this->coins / 3);
+	
 		// military
 		foreach($this->militaryPoints as $mult => $tokens)
 			$total += ($mult == 0 ? -1 : $mult) * $tokens;
+
 		// science
 		foreach($this->science as $science => $amount){
 			$total += $amount * $amount;
 		}
 		$total += min($this->science) * 7;
-		// do a check for 3rd age yellow/guild cards here
+	
+		// 3rd age yellow cards + guild cards
+
+
 		return $total;
 	}
 
