@@ -201,6 +201,8 @@ function parseFunc($command, $card, $player, $ignore_this){
 						}
 					}
 				}
+			} elseif($card->getAge() == 2){
+				// check for yellow non-buyable resources
 			} elseif($card->getAge() == 3){
 				preg_match('/\((.)\)\{(.)\} (.+)?/', $command, $matches);
 				// when/how do we want to evaluate points??
@@ -216,7 +218,7 @@ function parseFunc($command, $card, $player, $ignore_this){
 						}
 					}
 				}
-				$player->addCoins($coins);
+				if($coinsToGive > 0) $player->addCoins($coinsToGive);
 			}
 		break;
 
@@ -231,8 +233,13 @@ function parseFunc($command, $card, $player, $ignore_this){
 
 		case 'brown':
 			// CHECK FOR DOUBLE RESOURCE VS TWO OPTION RESOURCE
-			foreach(getResourceCost($command) as $resource => $amount){
-				$player->addResource($resource, $amount, $card->getColor() != 'yellow');
+			$resources = getResourceCost($command);
+			if(strpos($command, '/') !== false){
+				$player->addResource($resources, 1, true);
+			} else {
+				foreach($resources as $resource => $amount){
+					$player->addResource($resource, $amount, true);
+				}
 			}
 		break;
 	}
