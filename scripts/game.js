@@ -23,9 +23,9 @@ var SevenWonders = function(socket, args){
 	var panelOut = false;
 	$('#resources a').click(function(){
 		if(panelOut){
-			$('#resourceSelect').animate({height: $('#resources').height(), top: 0}, 500);
+			$('#resourceSelect').animate({height: $('#resources').height(), bottom: 5}, 500);
 		} else {
-			$('#resourceSelect').animate({height: $('#resources').height() * 1.4, top: -$('#resources').height() * 1.4}, 500);
+			$('#resourceSelect').animate({height: $('#resources').height() * 2.2, bottom: $('#resources').height()}, 500);
 		}
 		panelOut = !panelOut;
 	});
@@ -327,7 +327,7 @@ SevenWonders.prototype = {
 			break;
 
 			case 'bought':
-				$('#resourceSelect').animate({height: $('#resources').height(), top: 0}, 500);
+				$('#resourceSelect').animate({height: $('#resources').height(), bottom: 5}, 500);
 				$('#current').html();
 				for(var resource in args.resources){
 					var amt = args.resources[resource];
