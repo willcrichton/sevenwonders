@@ -18,8 +18,6 @@
  * 10. Highlight play for free cards
  * * * * * * * * * * * * * * * * * * * * * * * * * */
 
- // derp?
- 
 require_once("cards.php");
 
 class SevenWonders {
