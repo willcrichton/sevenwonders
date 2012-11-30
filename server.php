@@ -1,6 +1,8 @@
 #!/php -q
 <?php
 
+/* TROLOLOLO */
+
 // Set date to avoid errors
 date_default_timezone_set("America/New_York");
 
