@@ -88,7 +88,7 @@ SevenWonders.prototype = {
 						card.find('.options, h1').css('display', 'none');
 						card.animate({
 							left: infoPos.left - 400 + index * 135,
-							bottom: $('#game').height() - infoPos.top - 155 + numInColor * 40 - (cardColor == 'blue' ? 100 : 0),
+							bottom: $('#game').height() - infoPos.top - 155 + numInColor * 40 - (cardColor == 'blue' ? 93 : 0),
 							width: cardWidth,
 							height: cardHeight
 						})
@@ -139,6 +139,7 @@ SevenWonders.prototype = {
 
 				// Put new cards at start position and rotate them accordingly
 				var numCards = args.cards.length;
+				$('#game').css('overflow', 'hidden');
 				$('.card').each(function(){
 					if($(this).hasClass('ignore')) return;
 					var deg = (cardIndex(this) + 0.5 - numCards / 2) * 8;
@@ -157,9 +158,10 @@ SevenWonders.prototype = {
 						var index = cardIndex(this);
 						$(this).animate({
 							'bottom': '+=' + ((Math.pow(index + 0.5 - numCards / 2, 2) * -8) + 665),
-							'left': '+=' + (index + 0.5 - numCards / 2) * 100
-						}, 2000, 'easeOutExpo');
-
+							'left': '+=' + (index + 0.5 - numCards / 2) * 120
+						}, 2000, 'easeOutExpo', function(){
+							$('#game').css("overflow", "auto");
+						});
 					});
 				}, 1000);
 
