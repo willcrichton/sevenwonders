@@ -72,7 +72,7 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 	public $military = 0;
 	public $militaryPoints = array(0,0,0,0,0,0);	
 	public $points = 0;
-	public $science = array();
+	public $science = array(0, 0, 0, 0);
 	public $isTrashing = false;
 	public $isBuildWonder = false;
 	public $leftPlayer;
@@ -134,7 +134,7 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 
 		// check if player has necessary resources
 		$cost = $card->getResourceCost();
-		$availableResources = array_combine($this->permResources, $this->tempResources);
+		$availableResources = array_merge($this->permResources, $this->tempResources);
 		if(!$this->checkResourceCost($cost, $availableResources)){
 			if($sendError) $this->sendError("You don't have enough resources to play this card");
 			return false;
@@ -191,25 +191,86 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 		$this->sendString(packet($this->militaryPoints, 'military'));
 	}
 
+	public function calcScience($science, $wildcards){
+		if($wildcards > 0){
+			$possibles = array();
+			for($i = 1; $i <= 3; $i++){
+				$science[$i - 1]--; $science[$i]++;
+				array_push($possibles, $this->calcScience($science, $wildcards - 1));				
+			}
+			return max($possibles);
+		} else {
+			$total = 0;
+			for($i = 1; $i <= 3; $i++)
+				$total += pow($science[$i], 2);
+			if($total == 0) return 0;
+			$total += min(array_slice($science, 1)) * 7;
+			return $total;
+		}
+	}
+
 	public function calcPoints(){
 		// blue cards
 		$total = $this->points;
 	
 		// coins
-		$total += Math.floor($this->coins / 3);
+		$total += floor($this->coins / 3);
 	
 		// military
 		foreach($this->militaryPoints as $mult => $tokens)
 			$total += ($mult == 0 ? -1 : $mult) * $tokens;
 
 		// science
-		foreach($this->science as $science => $amount){
-			$total += $amount * $amount;
-		}
-		$total += min($this->science) * 7;
+		print_r($this->science);
+		$total += $this->calcScience($this->science, $this->science[0]);
 	
 		// 3rd age yellow cards + guild cards
-
+		foreach($this->cardsPlayed as $card){
+			if($card->getAge() == 3){
+				if($card->getColor() == 'yellow'){
+					preg_match('/\((.)\)\{(.)\} (.+)?/', $card->getCommand(), $matches);
+					$mult = $matches[2]; $color = $matches[3];
+					$sum = 0;
+					if($color == 'wonder'){
+						// check for wonders here
+					} else {
+						foreach($this->cardsPlayed as $c){
+							if($c->getColor() == $color) $sum++;
+						}
+					}
+					$total += intval($mult) * $sum;
+				} elseif($card->getColor() == 'purple' && $card->getName() != "Scientists Guild"){
+					$args = explode(' ', $card->getCommand());
+					$directions = arrowsToDirection($args[0]);
+					$color = $args[1];
+					$mult = intval($args[2]);
+					/************* THIS NEEDS TO BE TESTED ****************/
+					foreach($directions as $dir){
+						$pl = $dir == 'left' ? $this->leftPlayer : ($dir == 'right' ? $this->rightPlayer : $this);
+						switch($color){
+							case '-1':
+								$total += $mult * (isset($pl->militaryPoints[0]) ? $pl->militaryPoints[0] : 0);
+							break;
+							case 'wonder':
+								// check for wonder here
+							break;
+							case 'brown,grey,blue':
+								foreach(explode(',', $color) as $subcolor){
+									foreach($pl->cardsPlayed as $c){
+										if($c->getColor() == $subcolor) $total += $mult;
+									}	
+								}
+							break;
+							default:
+								foreach($pl->cardsPlayed as $c){
+									if($c->getColor() == $color) $total += $mult;
+								}
+							break;
+						}	
+					}
+				}
+			}
+		}
 
 		return $total;
 	}
