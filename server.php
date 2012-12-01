@@ -10,6 +10,14 @@ function packet($args, $type){
         return json_encode($args);
 }
 
+function arrowsToDirection($str){
+        $directions = array();
+        for($i = 0; $i < strlen($str); $i++){
+                $directions[] = $str[$i] == '<' ? 'left' : ($str[$i] == '>' ? 'right' : 'self');
+        }
+        return $directions;
+}
+
 // Run from command prompt > php demo.php
 require_once("includes/websocket.server.php");
 require_once("wonders.php");
