@@ -2,20 +2,21 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * *
  * TO DO LIST
  * 1. Fix cards
- *	 1a. Fix checking resource costs
- *   1b. Add in effects for guilds, remaining cards
+ *	 1a. Add in effects for wonders (where applicable)
  * 2. Finish wonders
  *   2b. Let players choose a side
  *   2c. Let players build wonder stages
  *   2e. Add functionality to wonder stages
  * 3. Add neighbors
  *   3c. Add interface to see info about non-neighbors
+ *	 3d. Show which resource neighbors have
  * 7. Transition between ages
  * 8. End game
  *    8a. Calculate victory points
  *    8b. Animation/show victor
  * 9. Button to show all your current cards
  * 10. Highlight play for free cards
+ * 11. Show victory points on screen somewhere
  * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 require_once("cards.php");
@@ -237,6 +238,10 @@ class SevenWonders {
 								$this->turn++;
 								$this->rotateHands($this->age != 2);
 							}
+
+							foreach($this->players as $player){
+								$this->log("User " . $player->name . " (" . $player->getId() . ") has " . $player->calcPoints() . " points");
+							}
 						}
 					} else {
 						// error: user can't play the card
@@ -295,10 +300,12 @@ class SevenWonders {
 			break;
 
 			default:
+				echo "Undefined message\n";
 				print_r($args);
 			break;
 		}
 	}
 }
+
 ?>
 
