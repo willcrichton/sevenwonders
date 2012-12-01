@@ -38,6 +38,10 @@ class WonderCard {
 		return $this->resourceCost;
 	}
 
+	function getCommand(){
+		return $this->command;
+	}
+
 	function getAge(){
 		return $this->age;
 	}
@@ -168,13 +172,7 @@ function getNumPlayers($fields){
 	return $numplayers;
 }
 
-function arrowsToDirection($str){
-	$directions = array();
-	for($i = 0; $i < strlen($str); $i++){
-		$directions[] = $str[$i] == '<' ? 'left' : ($str[$i] == '>' ? 'right' : 'self');
-	}
-	return $directions;
-}
+
 
 function parseFunc($command, $card, $player, $ignore_this){
 	switch($card->getColor()){
@@ -203,6 +201,23 @@ function parseFunc($command, $card, $player, $ignore_this){
 				}
 			} elseif($card->getAge() == 2){
 				// check for yellow non-buyable resources
+				if(strpos($command, '/') !== false){
+					$resources = getResourceCost($command);
+					$player->addResource(array_keys($resources), 1, false);
+				} else {
+					$args = explode(' ', $command);
+					$directions = arrowsToDirection($args[0]);
+					$coins = 0;
+					$color = $args[1];
+					$mult = intval($args[2]);
+					foreach($directions as $dir){
+						$pl = $dir == 'left' ? $player->leftPlayer : ($dir == 'right' ? $player->rightPlayer : $player);
+						foreach($pl->cardsPlayed as $c){
+							if($c->getColor() == $color) $coins += $mult;
+						}
+					}
+					$player->addCoins($coins);
+				}
 			} elseif($card->getAge() == 3){
 				preg_match('/\((.)\)\{(.)\} (.+)?/', $command, $matches);
 				// when/how do we want to evaluate points??
@@ -214,7 +229,6 @@ function parseFunc($command, $card, $player, $ignore_this){
 					foreach($player->cardsPlayed as $card){
 						if($card->getColor() == $color){
 							$coinsToGive += $coins;
-							//$pointsToGive += $points;
 						}
 					}
 				}
@@ -227,6 +241,9 @@ function parseFunc($command, $card, $player, $ignore_this){
 		break;
 
 		case 'purple':
+			if($card->getName() == 'Scientists Guild'){
+				$player->addScience(0);
+			}
 			// none of these give coins or anything, so don't need to check
 			// until the end
 		break;
@@ -235,7 +252,7 @@ function parseFunc($command, $card, $player, $ignore_this){
 			// CHECK FOR DOUBLE RESOURCE VS TWO OPTION RESOURCE
 			$resources = getResourceCost($command);
 			if(strpos($command, '/') !== false){
-				$player->addResource($resources, 1, true);
+				$player->addResource(array_keys($resources), 1, true);
 			} else {
 				foreach($resources as $resource => $amount){
 					$player->addResource($resource, $amount, true);
@@ -253,7 +270,7 @@ function importCards($age){
 			'name' => $fields[3],
 			'color' => $fields[2],
 			'moneyCost' => preg_match('/[0-9]/', $fields[1], $matches) ? 1 : 0,
-			'resourceCost' => array(), //getResourceCost($fields[1]),
+			'resourceCost' => getResourceCost($fields[1]),
 			'freePrereq' => $fields[0],
 			'age' => $age,
 			'numPlayers' => $fields[2] == 'purple' ? array(1) : getNumPlayers($fields),
