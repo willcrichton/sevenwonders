@@ -248,7 +248,7 @@ function parseFunc($command, $card, $player, $ignore_this){
 			// until the end
 		break;
 
-		case 'brown':
+		case 'brown': case 'grey':
 			// CHECK FOR DOUBLE RESOURCE VS TWO OPTION RESOURCE
 			$resources = getResourceCost($command);
 			if(strpos($command, '/') !== false){
