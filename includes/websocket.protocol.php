@@ -221,7 +221,6 @@ abstract class WebSocketConnection implements IWebSocketConnection {
 			$total += ($mult == 0 ? -1 : $mult) * $tokens;
 
 		// science
-		print_r($this->science);
 		$total += $this->calcScience($this->science, $this->science[0]);
 	
 		// 3rd age yellow cards + guild cards

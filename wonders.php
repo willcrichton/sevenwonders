@@ -210,7 +210,7 @@ class SevenWonders {
 									notify everyone else. GOGOGOOOOO
 									player PURPLE -> wonder -> use effect pink noooo why do PINK */
 								} else {
-									$this->log("User " . $user->name . " (" . $user->getId() . ") playing " . $player->selectedCard->getName());										
+									$this->log("User " . $player->name . " (" . $user->getId() . ") playing " . $player->selectedCard->getName());										
 									$player->selectedCard->play($player, array() /*, more args here? */);
 									$player->cardsPlayed[] = $player->selectedCard;
 								}
