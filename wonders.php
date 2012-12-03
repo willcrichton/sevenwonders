@@ -260,21 +260,24 @@ class SevenWonders {
 			case 'trade':
 				$this->log("User " . $user->name . " is trading");
 				$leftTotal = 0;
+
+				$leftFilter = array_filter($user->leftPlayer->permResources, function($var){ return $var->buyable; });
+				if(!$user->leftPlayer->checkResourceCost($args['left'], $leftFilter)){
+					$user->sendError("Left player doesn't have those resources");
+					return;
+				}
 				foreach($args['left'] as $resource => $amount){
-					if(!$user->leftPlayer->canSellResource($resource)){
-						$user->sendError("Left player doesn't have those resources");
-						return;
-					} 
 					$discount = isset($user->discounts['left'][$resource]) ? $user->discounts['left'][$resource] : 0;
 					$leftTotal += max((2 - $discount) * $amount, 0);
 				}
 
 				$rightTotal = 0;
+				$rightFilter = array_filter($user->rightPlayer->permResources, function($var){ return $var->buyable; });
+				if(!$user->leftPlayer->checkResourceCost($args['right'], $rightFilter)){
+					$user->sendError("Right player doesn't have those resources");
+					return;
+				}
 				foreach($args['right'] as $resource => $amount){
-					if(!$user->rightPlayer->canSellResource($resource)){
-						$user->sendError("Right player doesn't have those resources");
-						return;
-					} 
 					$discount = isset($user->discounts['right'][$resource]) ? $user->discounts['right'][$resource] : 0;
 					$rightTotal += max((2 - $discount) * $amount, 0);
 				}
