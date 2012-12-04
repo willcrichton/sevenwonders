@@ -1,4 +1,4 @@
-<?php
+<?
 /* * * * * * * * * * * * * * * * * * * * * * * * * *
  * TO DO LIST
  * 1. Fix cards
@@ -273,7 +273,7 @@ class SevenWonders {
 
 				$rightTotal = 0;
 				$rightFilter = array_filter($user->rightPlayer->permResources, function($var){ return $var->buyable; });
-				if(!$user->leftPlayer->checkResourceCost($args['right'], $rightFilter)){
+				if(!$user->leftPlayer->checkResourceCost($args['right'], $rightFilter	)){
 					$user->sendError("Right player doesn't have those resources");
 					return;
 				}
@@ -295,7 +295,12 @@ class SevenWonders {
 				// give left/right neighbors coins accordingly
 				foreach(array('left', 'right') as $side){
 					foreach($args[$side] as $resource => $amount){
-						$user->tempResources[$resource] = $amount;
+						for($i = 0; $i < $amount; $i++){
+							$res = new Resource();
+							$res->buyable = false;
+							$res->resources = $resource;
+							$user->tempResources[] = $res;
+						}
 					}
 				}
 
