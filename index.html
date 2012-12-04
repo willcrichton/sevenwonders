@@ -29,7 +29,7 @@
 			var game = undefined;
 			$(document).ready(function(){
 				$("#game").css({width: Math.max($(window).width(), 1420), height: Math.max($(window).height(), 730)});
-				var host = "ws://" + window.location.host + ":12345";
+				var host = "ws://" + window.location.hostname + ":12345";
 				try {
 					socket = createSocket(host);
 					socket.onopen = function(msg){ 
