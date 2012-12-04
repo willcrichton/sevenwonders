@@ -160,22 +160,15 @@ class SevenWonders {
 	}
 
 	public function rotateHands($moveLeft){
-		// todo: simiplify this so it uses $player->leftNeighbor and rightNeighbor
-		if($moveLeft){
-			$temp = $this->players[count($this->players) - 1]->hand;
-			for($i = count($this->players) - 1; $i >= 0; $i--){
-				$this->players[$i]->hand = $i == 0 ? $temp : $this->players[$i - 1]->hand;
-				$packet = packet(array('cards' => $this->deck->cardInfo($this->players[$i]->hand)), "hand");
-				$this->players[$i]->sendString($packet);
-			}
-		} else {
-			$temp = $this->players[0]->hand;
-			for($i = 0; $i < count($this->players); $i++){
-				$this->players[$i]->hand = $i == count($this->players) - 1 ? $temp : $this->players[$i + 1]->hand;
-				$packet = packet(array('cards' => $this->deck->cardInfo($this->players[$i]->hand)), "hand");
-				$this->players[$i]->sendString($packet);
-			}
-		}
+		$player = $this->players[0];
+		$tempHand = $player->hand;
+		do {
+			$neighbor = $moveLeft ? $player->rightPlayer : $player->leftPlayer;
+			$player->hand = $neighbor == $player ? $tempHand : $neighbor->hand;
+			$packet = packet(array('cards' => $this->deck->cardInfo($player->hand)), "hand");
+			$player->sendString($packet);
+			$player = $neighbor;
+		} while($player != $this->players[0]);
 	}
 
 	public function onMessage(IWebSocketConnection $user, $args){
