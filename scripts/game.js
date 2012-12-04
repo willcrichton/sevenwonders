@@ -90,7 +90,8 @@ SevenWonders.prototype = {
 							left: infoPos.left - 400 + index * 135,
 							bottom: $('#game').height() - infoPos.top - 155 + numInColor * 40 - (cardColor == 'blue' ? 93 : 0),
 							width: cardWidth,
-							height: cardHeight
+							height: cardHeight,
+							opacity: 1
 						})
 
 						self.cardsPlayed.push(card);
