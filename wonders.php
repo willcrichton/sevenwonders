@@ -17,6 +17,8 @@
  * 9. Button to show all your current cards
  * 10. Highlight play for free cards
  * 11. Show victory points on screen somewhere
+ * 12. Improve resource buying interface
+ * 13. Re-join game on accidental refresh
  * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 require_once("cards.php");
@@ -34,6 +36,7 @@ class SevenWonders {
 	public $age = 1;
 	public $turn = 1;
 	public $cardsChosen = array();
+	public $tradeQueue = array();
 	public $wonders = array(
 		array(
 			"name" => "Olympia",
@@ -203,12 +206,6 @@ class SevenWonders {
 									$player->addCoins(3);
 									$player->isTrashing = false;
 								//} elseif($player->isWonderBuilding == true){
-									// lucy's code here
-									/*check -> resources -> please 
-									do they have logs and shit like that (are those the resources???) jk shit = false !!
-									player PURPLE --> wonder -> BUILD. 
-									notify everyone else. GOGOGOOOOO
-									player PURPLE -> wonder -> use effect pink noooo why do PINK */
 								} else {
 									$this->log("User " . $player->name . " (" . $user->getId() . ") playing " . $player->selectedCard->getName());										
 									$player->selectedCard->play($player, array() /*, more args here? */);
@@ -218,6 +215,11 @@ class SevenWonders {
 								unset($player->selectedCard);
 								$player->tempResources = array();
 							}
+
+							foreach($this->tradeQueue as $trade){
+								$trade['player']->addCoins($trade['coins']);
+							}
+							$this->tradeQueue = array();
 
 							$this->cardsChosen = array();
 							if($this->turn == 6){
@@ -248,6 +250,7 @@ class SevenWonders {
 					}
 				} else {
 					// error: you cheating motherfucker, you don't have that card in your hand
+					$user->sendError("Pssht, you gotta try harder than that.");
 				}
 			break;
 
@@ -290,8 +293,10 @@ class SevenWonders {
 				}
 
 				$user->addCoins(-1 * $total);
-				if($leftTotal > 0) $user->leftPlayer->addCoins($leftTotal);
-				if($rightTotal > 0) $user->rightPlayer->addCoins($rightTotal);
+				if($leftTotal > 0)
+				 	$this->tradeQueue[] = array('player' => $user->leftPlayer, 'coins' => $leftTotal);
+				if($rightTotal > 0)
+					$this->tradeQueue[] = array('player' => $user->rightPlayer, 'coins' => $rightTotal);
 				// give left/right neighbors coins accordingly
 				foreach(array('left', 'right') as $side){
 					foreach($args[$side] as $resource => $amount){
