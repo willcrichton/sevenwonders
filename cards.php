@@ -1,4 +1,4 @@
-<?
+<?php
 
 class WonderCard {
 	protected $name;
