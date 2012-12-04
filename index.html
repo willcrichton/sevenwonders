@@ -67,8 +67,9 @@
 
 							case 'startinfo':
 								status = "game";
+								$('#pregame, #game, body').css('overflow', 'hidden');
 								$('#pregame').fadeOut(500);
-								$('#game').fadeIn(500);
+								$('#game').fadeIn(500, function(){ $('#pregame, #game, body').css('overflow', 'auto'); });
 
 								game = new SevenWonders(socket, args);
 								console.log(game);
@@ -157,11 +158,11 @@
 					<form method="post" onsubmit="return newGame(this)">
 						<table>
 							<tr>
-								<td>Name:</td>
+								<td>Game Name:</td>
 								<td><input type="text" name="game_name" /></td>
 							</tr>
 							<tr>
-								<td>Players:</td>
+								<td># Players:</td>
 								<td><input type="range" name="players" min="1" max="7" value="1" /> <span id="numplayers">1</span></td>
 							</tr>
 							<tr>
