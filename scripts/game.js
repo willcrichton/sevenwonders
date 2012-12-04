@@ -86,6 +86,7 @@ SevenWonders.prototype = {
 							if(self.cardsPlayed[i].data('cardInfo').color == cardColor) numInColor++;
 
 						card.find('.options, h1').css('display', 'none');
+						card.css('z-index', 100 - numInColor);
 						card.animate({
 							left: infoPos.left - 400 + index * 135,
 							bottom: $('#game').height() - infoPos.top - 155 + numInColor * 40 - (cardColor == 'blue' ? 93 : 0),
