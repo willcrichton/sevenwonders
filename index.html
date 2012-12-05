@@ -1,262 +1,262 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>Seven Wonders</title>
-		<link href="styles/mediakit.css" rel="stylesheet" type="text/css" />
-		<link href="styles/style.css" rel="stylesheet" type="text/css" />
-		<script type="text/javascript" src="scripts/jquery-1.6.2.js"></script>
-		<script type="text/javascript" src="scripts/jquery-rotate.js"></script>
-		<script type="text/javascript" src="scripts/jquery.flip.min.js"></script>
-		<script type="text/javascript" src="scripts/jquery.easing.js"></script>
-		<script type="text/javascript" src="scripts/html5slider.js"></script>
-		<script type="text/javascript" src="scripts/game.js"></script>
-		<script type="text/javascript">
-			function createSocket(host){
-				if(window.WebSocket) return new WebSocket(host);
-				else if(window.MozWebSocket) return new MozWebSocket(host);
-			}
+    <head>
+        <title>Seven Wonders</title>
+        <link href="styles/mediakit.css" rel="stylesheet" type="text/css" />
+        <link href="styles/style.css" rel="stylesheet" type="text/css" />
+        <script type="text/javascript" src="scripts/jquery-1.6.2.js"></script>
+        <script type="text/javascript" src="scripts/jquery-rotate.js"></script>
+        <script type="text/javascript" src="scripts/jquery.flip.min.js"></script>
+        <script type="text/javascript" src="scripts/jquery.easing.js"></script>
+        <script type="text/javascript" src="scripts/html5slider.js"></script>
+        <script type="text/javascript" src="scripts/game.js"></script>
+        <script type="text/javascript">
+            function createSocket(host){
+                if(window.WebSocket) return new WebSocket(host);
+                else if(window.MozWebSocket) return new MozWebSocket(host);
+            }
 
-			function send(opts, type){
-				opts.messageType = type;
-				socket.send(JSON.stringify(opts));
-			}
+            function send(opts, type){
+                opts.messageType = type;
+                socket.send(JSON.stringify(opts));
+            }
 
-			var socket;
-			var my_name = "Guest";
-			var players = [];
-			var status = "lobby";
-			var game = undefined;
-			$(document).ready(function(){
-				$("#game").css({width: Math.max($(window).width(), 1420), height: Math.max($(window).height(), 730)});
-				var host = "ws://" + window.location.hostname + ":12345";
-				try {
-					socket = createSocket(host);
-					socket.onopen = function(msg){ 
-						console.log("WebSocket OPEN!"); 
-						if(localStorage.sevenwonders_name != '' && typeof localStorage.sevenwonders_name != 'undefined'){
-							changeName({name:{value: localStorage.sevenwonders_name}});
-							$('input[name=name]').attr('value', localStorage.sevenwonders_name);
-						}
-					}
-					socket.onmessage = function(msg){ 
-						var args = {};
-						try {
-							var args = JSON.parse(msg.data);
-						} catch(ex){}
-						
-						switch(args.messageType){
-							case 'myname':
-								if(localStorage.sevenwonders_name == ''){
-									$('input[name=name]').attr('value', args.data);
-									my_name = args.data;
-								}
-							break;
+            var socket;
+            var my_name = "Guest";
+            var players = [];
+            var status = "lobby";
+            var game = undefined;
+            $(document).ready(function(){
+                $("#game").css({width: Math.max($(window).width(), 1420), height: Math.max($(window).height(), 730)});
+                var host = "ws://" + window.location.hostname + ":12345";
+                try {
+                    socket = createSocket(host);
+                    socket.onopen = function(msg){
+                        console.log("WebSocket OPEN!");
+                        if(localStorage.sevenwonders_name != '' && typeof localStorage.sevenwonders_name != 'undefined'){
+                            changeName({name:{value: localStorage.sevenwonders_name}});
+                            $('input[name=name]').attr('value', localStorage.sevenwonders_name);
+                        }
+                    }
+                    socket.onmessage = function(msg){
+                        var args = {};
+                        try {
+                            var args = JSON.parse(msg.data);
+                        } catch(ex){}
 
-							case 'newgame':
-								if(status == "lobby"){
-									$('#opengames').append('<li class="light" id="game' + args.id + '"><a href="#" onclick="return joinGame(' + args.id + ')">' + args.name + ' - ' + args.creator + 
-										'</a></li>');
-								}
-							break;
+                        switch(args.messageType){
+                            case 'myname':
+                                if(localStorage.sevenwonders_name == ''){
+                                    $('input[name=name]').attr('value', args.data);
+                                    my_name = args.data;
+                                }
+                            break;
 
-							case 'newplayer':
-								players.push(args);
-								$('#waiting ul').append('<li>' + args.name + '</li>');
-							break;
+                            case 'newgame':
+                                if(status == "lobby"){
+                                    $('#opengames').append('<li class="light" id="game' + args.id + '"><a href="#" onclick="return joinGame(' + args.id + ')">' + args.name + ' - ' + args.creator +
+                                        '</a></li>');
+                                }
+                            break;
 
-							case 'startinfo':
-								status = "game";
-								$('#pregame, #game, body').css('overflow', 'hidden');
-								$('#pregame').fadeOut(500);
-								$('#game').fadeIn(500, function(){ $('#pregame, #game, body').css('overflow', 'auto'); });
+                            case 'newplayer':
+                                players.push(args);
+                                $('#waiting ul').append('<li>' + args.name + '</li>');
+                            break;
 
-								game = new SevenWonders(socket, args);
-								console.log(game);
-							break;
+                            case 'startinfo':
+                                status = "game";
+                                $('#pregame, #game, body').css('overflow', 'hidden');
+                                $('#pregame').fadeOut(500);
+                                $('#game').fadeIn(500, function(){ $('#pregame, #game, body').css('overflow', 'auto'); });
 
-							case 'started':
-								$("#game" + args.id).css('display', 'none');
-							break;
+                                game = new SevenWonders(socket, args);
+                                console.log(game);
+                            break;
 
-							default:
-								if(game != undefined) 
-									game.onMessage(args, msg.data);
-								else
-									console.log(msg.data);
-							break;
-						}
-					}
-					socket.onclose = function(msg){ 
-						console.log("WebSocket CLOSED...");
-						$('body *').remove();
-						$('body').append('<h1 class="disconnect"><span>ERROR</span>: The game server is down or your connection was severed. Try refreshing.</h1>') 
-					}
-				} catch(ex) {
-					console.log(ex);
-				}
+                            case 'started':
+                                $("#game" + args.id).css('display', 'none');
+                            break;
 
-				$('input[name=players]').change(function(){ 
-					$('#numplayers').html($(this).attr('value'));
-				});
-			});
+                            default:
+                                if(game != undefined)
+                                    game.onMessage(args, msg.data);
+                                else
+                                    console.log(msg.data);
+                            break;
+                        }
+                    }
+                    socket.onclose = function(msg){
+                        console.log("WebSocket CLOSED...");
+                        $('body *').remove();
+                        $('body').append('<h1 class="disconnect"><span>ERROR</span>: The game server is down or your connection was severed. Try refreshing.</h1>')
+                    }
+                } catch(ex) {
+                    console.log(ex);
+                }
+
+                $('input[name=players]').change(function(){
+                    $('#numplayers').html($(this).attr('value'));
+                });
+            });
 
 
-			function newGame(form){
-				if(form.game_name.value == ''){
-					alert('Please enter a name for your game.');
-					return false;
-				}
-				var opts = { name: form.game_name.value, players: form.players.value };
-				send(opts, "newgame");
-				waitScreen();
+            function newGame(form){
+                if(form.game_name.value == ''){
+                    alert('Please enter a name for your game.');
+                    return false;
+                }
+                var opts = { name: form.game_name.value, players: form.players.value };
+                send(opts, "newgame");
+                waitScreen();
 
-				return false;
-			}
+                return false;
+            }
 
-			function waitScreen(){
-				$('#lobby').fadeOut(500, function(){
-					$('#waiting').fadeIn(1000);
-					$('#pregame').animate({ height: $('#waiting').outerHeight() }, 500, function(){
-						$(this).css('height', 'auto');
-					});
-				});
+            function waitScreen(){
+                $('#lobby').fadeOut(500, function(){
+                    $('#waiting').fadeIn(1000);
+                    $('#pregame').animate({ height: $('#waiting').outerHeight() }, 500, function(){
+                        $(this).css('height', 'auto');
+                    });
+                });
 
-				$('#waiting ul').append('<li>' + my_name + ' (you)</li>');
-				$('#pregame').css('height', $('#lobby').outerHeight());
+                $('#waiting ul').append('<li>' + my_name + ' (you)</li>');
+                $('#pregame').css('height', $('#lobby').outerHeight());
 
-				status = "waiting";
-			}
+                status = "waiting";
+            }
 
-			function joinGame(id){
-				var opts = { id: id };
-				send(opts, "joingame");
-				waitScreen();
+            function joinGame(id){
+                var opts = { id: id };
+                send(opts, "joingame");
+                waitScreen();
 
-				return false;
-			}
+                return false;
+            }
 
-			function changeName(form){
-				var opts = { name: form.name.value };
-				send(opts, "changename");
-				my_name = opts.name;
-				localStorage.sevenwonders_name = my_name;
-				return false;
-			}
-		</script>
-	</head>
-	<body>	
-		<div id="pregame">
-			<div id="lobby">
-				<h1>Seven Wonders<br /><span>Created by Antoine Bauza, published by Repos Productions</span></h1>
-				<form id="nickname" method="post" onsubmit="return changeName(this)">
-						Name: <input type="text" name="name" value="" /> 
-						<input type="submit" value="Change Name" />
-				</form>
-				<div class="column left">
-					<h2>Start a Game</h2>
-					<form method="post" onsubmit="return newGame(this)">
-						<table>
-							<tr>
-								<td>Game Name:</td>
-								<td><input type="text" name="game_name" /></td>
-							</tr>
-							<tr>
-								<td># Players:</td>
-								<td><input type="range" name="players" min="1" max="7" value="1" /> <span id="numplayers">1</span></td>
-							</tr>
-							<tr>
-								<td></td>
-								<td><input type="submit" value="Start" /></td>
-							</tr>
-						</table>
-					</form>
-				</div>
-				<div class="column right">
-					<h2>Open Games</h2>
-					<ul id="opengames" class="menu light"></ul>
-				</div>
-			</div>
-			<div id="waiting">
-				<h1>Waiting for Players...</h1>
-				<ul></ul>
-			</div>
-		</div>
-		<div id="game">
-			<div id="wonder">
-				<div id="resources">
-					<h1>RESOURCES</h1>
-					<div id="current"></div>
-					<div class="button-wrapper">
-						<a href="#" class="button light">Trade</a>
-					</div>
-				</div>
-				<div id="resourceSelect">
-					<h1>TRADE</h1>
-					<h2>Left Player</h2>
-					<table>
-						<tr>
-							<td>Wood:</td>
-							<td><input type="text" value="0" name="left_wood" /></td>
-							<td>Glass:</td>
-							<td><input type="text" value="0" name="left_glass" /></td>
-						</tr>
-						<tr>
-							<td>Clay:</td>
-							<td><input type="text" value="0" name="left_clay" /></td>
-							<td>Paper:</td>
-							<td><input type="text" value="0" name="left_paper" /></td>
-						</tr>
-						<tr>
-							<td>Ore:</td>
-							<td><input type="text" value="0" name="left_ore" /></td>
-							<td>Cloth:</td>
-							<td><input type="text" value="0" name="left_linen" /></td>
-						</tr>
-						<tr>
-							<td>Stone:</td>
-							<td><input type="text" value="0" name="left_stone" /></td>
-						</tr>
-					</table>
-					<h2>Right Player</h2>
-					<table>
-						<tr>
-							<td>Wood:</td>
-							<td><input type="text" value="0" name="right_wood" /></td>
-							<td>Glass:</td>
-							<td><input type="text" value="0" name="right_glass" /></td>
-						</tr>
-						<tr>
-							<td>Clay:</td>
-							<td><input type="text" value="0" name="right_clay" /></td>
-							<td>Paper:</td>
-							<td><input type="text" value="0" name="right_paper" /></td>
-						</tr>
-						<tr>
-							<td>Ore:</td>
-							<td><input type="text" value="0" name="right_ore" /></td>
-							<td>Cloth:</td>
-							<td><input type="text" value="0" name="right_linen" /></td>
-						</tr>
-						<tr>
-							<td>Stone:</td>
-							<td><input type="text" value="0" name="right_stone" /></td>
-						</tr>
-					</table>
-					<div class="button-wrapper">
-						<a href="#" class="button light">Submit</a>
-					</div>
-				</div>
-				<div id="coins"></div>
-				<div id="military"></div>
-			</div>
-			<div class="neighbor left">
-				<h1>LEFT</h1>
-			</div>
-			<div class="neighbor right">
-				<h1>RIGHT</h1>
-			</div>
-		</div>
-		<!-- co.nr link for niceness -->
-		<a href="http://www.freedomain.co.nr/" title="Free Domain Name"><img src="http://rnrnoza.imdrv.net/animg7.gif" alt="Free Domain Name" style="width:88px;height:31px;border:0;" /></a>
-	</body>
-</html>			
+            function changeName(form){
+                var opts = { name: form.name.value };
+                send(opts, "changename");
+                my_name = opts.name;
+                localStorage.sevenwonders_name = my_name;
+                return false;
+            }
+        </script>
+    </head>
+    <body>
+        <div id="pregame">
+            <div id="lobby">
+                <h1>Seven Wonders<br /><span>Created by Antoine Bauza, published by Repos Productions</span></h1>
+                <form id="nickname" method="post" onsubmit="return changeName(this)">
+                        Name: <input type="text" name="name" value="" />
+                        <input type="submit" value="Change Name" />
+                </form>
+                <div class="column left">
+                    <h2>Start a Game</h2>
+                    <form method="post" onsubmit="return newGame(this)">
+                        <table>
+                            <tr>
+                                <td>Game Name:</td>
+                                <td><input type="text" name="game_name" /></td>
+                            </tr>
+                            <tr>
+                                <td># Players:</td>
+                                <td><input type="range" name="players" min="1" max="7" value="1" /> <span id="numplayers">1</span></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td><input type="submit" value="Start" /></td>
+                            </tr>
+                        </table>
+                    </form>
+                </div>
+                <div class="column right">
+                    <h2>Open Games</h2>
+                    <ul id="opengames" class="menu light"></ul>
+                </div>
+            </div>
+            <div id="waiting">
+                <h1>Waiting for Players...</h1>
+                <ul></ul>
+            </div>
+        </div>
+        <div id="game">
+            <div id="wonder">
+                <div id="resources">
+                    <h1>RESOURCES</h1>
+                    <div id="current"></div>
+                    <div class="button-wrapper">
+                        <a href="#" class="button light">Trade</a>
+                    </div>
+                </div>
+                <div id="resourceSelect">
+                    <h1>TRADE</h1>
+                    <h2>Left Player</h2>
+                    <table>
+                        <tr>
+                            <td>Wood:</td>
+                            <td><input type="text" value="0" name="left_wood" /></td>
+                            <td>Glass:</td>
+                            <td><input type="text" value="0" name="left_glass" /></td>
+                        </tr>
+                        <tr>
+                            <td>Clay:</td>
+                            <td><input type="text" value="0" name="left_clay" /></td>
+                            <td>Paper:</td>
+                            <td><input type="text" value="0" name="left_paper" /></td>
+                        </tr>
+                        <tr>
+                            <td>Ore:</td>
+                            <td><input type="text" value="0" name="left_ore" /></td>
+                            <td>Cloth:</td>
+                            <td><input type="text" value="0" name="left_linen" /></td>
+                        </tr>
+                        <tr>
+                            <td>Stone:</td>
+                            <td><input type="text" value="0" name="left_stone" /></td>
+                        </tr>
+                    </table>
+                    <h2>Right Player</h2>
+                    <table>
+                        <tr>
+                            <td>Wood:</td>
+                            <td><input type="text" value="0" name="right_wood" /></td>
+                            <td>Glass:</td>
+                            <td><input type="text" value="0" name="right_glass" /></td>
+                        </tr>
+                        <tr>
+                            <td>Clay:</td>
+                            <td><input type="text" value="0" name="right_clay" /></td>
+                            <td>Paper:</td>
+                            <td><input type="text" value="0" name="right_paper" /></td>
+                        </tr>
+                        <tr>
+                            <td>Ore:</td>
+                            <td><input type="text" value="0" name="right_ore" /></td>
+                            <td>Cloth:</td>
+                            <td><input type="text" value="0" name="right_linen" /></td>
+                        </tr>
+                        <tr>
+                            <td>Stone:</td>
+                            <td><input type="text" value="0" name="right_stone" /></td>
+                        </tr>
+                    </table>
+                    <div class="button-wrapper">
+                        <a href="#" class="button light">Submit</a>
+                    </div>
+                </div>
+                <div id="coins"></div>
+                <div id="military"></div>
+            </div>
+            <div class="neighbor left">
+                <h1>LEFT</h1>
+            </div>
+            <div class="neighbor right">
+                <h1>RIGHT</h1>
+            </div>
+        </div>
+        <!-- co.nr link for niceness -->
+        <a href="http://www.freedomain.co.nr/" title="Free Domain Name"><img src="http://rnrnoza.imdrv.net/animg7.gif" alt="Free Domain Name" style="width:88px;height:31px;border:0;" /></a>
+    </body>
+</html>
