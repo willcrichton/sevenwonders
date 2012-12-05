@@ -11,6 +11,7 @@
         <script type="text/javascript" src="scripts/html5slider.js"></script>
         <script type="text/javascript" src="scripts/game.js"></script>
         <script type="text/javascript">
+        (function() {
             function createSocket(host){
                 if(window.WebSocket) return new WebSocket(host);
                 else if(window.MozWebSocket) return new MozWebSocket(host);
@@ -18,16 +19,13 @@
 
             function send(opts, type){
                 opts.messageType = type;
+                opts.id = my_id;
                 socket.send(JSON.stringify(opts));
             }
 
             function onopen(msg) {
                 console.log("WebSocket OPEN!");
-                var saved = localStorage.sevenwonders_name;
-                if(saved != '' && typeof saved != 'undefined'){
-                    changeName({name:{value: saved}});
-                    $('input[name=name]').attr('value', saved);
-                }
+                send({id: my_id}, 'myid');
             }
 
             function onmessage(msg) {
@@ -35,10 +33,11 @@
 
                 switch(args.messageType){
                     case 'myname':
-                        if(localStorage.sevenwonders_name == ''){
-                            $('input[name=name]').attr('value', args.data);
-                            my_name = args.data;
-                        }
+                        localStorage.sevenwonders_id = args.id;
+                        $('input[name=name]').attr('value', args.name);
+                        my_name = args.name;
+                        changeName({name:{value: my_name}});
+                        $('input[name=name]').attr('value', my_name);
                         break;
 
                     case 'newgame':
@@ -77,6 +76,7 @@
             }
 
             var socket;
+            var my_id = localStorage.sevenwonders_id || '';
             var my_name = "Guest";
             var players = [];
             var status = "lobby";
@@ -141,9 +141,10 @@
                 var opts = { name: form.name.value };
                 send(opts, "changename");
                 my_name = opts.name;
-                localStorage.sevenwonders_name = my_name;
                 return false;
             }
+            window.changeName = changeName;
+        })();
         </script>
     </head>
     <body>

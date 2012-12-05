@@ -2,25 +2,57 @@
 
 class Player {
 
-    public $name;
+    private $id;
+    private $name;
+    private $conn;
+
     public $game;
-    public $coins = 0;
-    public $permResources = array();
-    public $tempResources = array();
-    public $wonder;
-    public $order;
-    public $hand;
-    public $selectedCard;
-    public $cardsPlayed = array();
-    public $military = 0;
-    public $militaryPoints = array(0,0,0,0,0,0);
-    public $points = 0;
-    public $science = array(0, 0, 0, 0);
-    public $isTrashing = false;
-    public $isBuildWonder = false;
-    public $leftPlayer;
-    public $rightPlayer;
-    public $discounts = array('left' => array(), 'right' => array());
+    private $coins = 0;
+    private $permResources = array();
+    private $tempResources = array();
+    private $wonder;
+    private $order;
+    private $hand;
+    private $selectedCard;
+    private $cardsPlayed = array();
+    private $military = 0;
+    private $militaryPoints = array(0,0,0,0,0,0);
+    private $points = 0;
+    private $science = array(0, 0, 0, 0);
+    private $isTrashing = false;
+    private $isBuildWonder = false;
+    private $leftPlayer;
+    private $rightPlayer;
+    private $discounts = array('left' => array(), 'right' => array());
+
+    public function __construct($id, $unique) {
+        $this->name = "Guest $unique";
+        $this->id = $id;
+    }
+
+    public function getId() {
+        return $this->id;
+    }
+
+    public function getName() {
+        return $this->name;
+    }
+
+    public function setName($name) {
+        $this->name = $name;
+    }
+
+    public function setConnection(IWebSocketConnection $conn) {
+        $this->conn = $conn;
+    }
+
+    public function send($type, $msg) {
+        if ($this->conn == null)
+            throw new Exception("user not connected any more");
+        $msg = is_array($msg) ? $msg : array('data' => $msg);
+        $msg['messageType'] = $type;
+        $this->conn->sendString(json_encode($msg));
+    }
 
     public function checkResourceCost($cost, $resources){
         $allZero = true;
@@ -215,12 +247,6 @@ class Player {
         }
 
         return $total;
-    }
-
-    public function __construct(WebSocketSocket $socket, array $headers) {
-        $this->setHeaders($headers);
-        $this->_socket = $socket;
-        $this->name = "Guest " . $this->getId();
     }
 
 }
