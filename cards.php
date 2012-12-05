@@ -279,8 +279,7 @@ function importCards($age){
 	}
 }
 
-importCards(1);
-importCards(2);
-importCards(3);
+for($i = 0; $i < 3; $i++)
+	importCards($i);
 
 ?>
