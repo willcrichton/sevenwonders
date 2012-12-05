@@ -1,25 +1,4 @@
 <?php
-/* * * * * * * * * * * * * * * * * * * * * * * * * *
- * TO DO LIST
- * 1. Fix cards
- *	 1a. Add in effects for wonders (where applicable)
- * 2. Finish wonders
- *   2b. Let players choose a side
- *   2c. Let players build wonder stages
- *   2e. Add functionality to wonder stages
- * 3. Add neighbors
- *   3c. Add interface to see info about non-neighbors
- *	 3d. Show which resource neighbors have
- * 7. Transition between ages
- * 8. End game
- *    8a. Calculate victory points
- *    8b. Animation/show victor
- * 9. Button to show all your current cards
- * 10. Highlight play for free cards
- * 11. Show victory points on screen somewhere
- * 12. Improve resource buying interface
- * 13. Re-join game on accidental refresh
- * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 require_once("cards.php");
 
@@ -305,12 +284,28 @@ class SevenWonders {
                 $user->sendString(packet(array('resources' => $user->tempResources), 'bought'));
                 break;
 
+            case 'checkresources':
+				$cardName = $args['value'];
+				foreach($user->hand as $card)
+					if($card->getName() == $cardName) $toPlay = $card;
+				
+				if(!isset($toPlay)){
+					$user->sendError("You don't have that card");
+					return;
+				}
+
+				$cost = $toPlay->getResourceCost();
+				$resources = array_merge($user->permResources, $user->tempResources);
+				$packet = packet(array('resources' => $user->checkResourceCost($cost, $resources)), 'resourcesneeded');
+				$user->sendString($packet);
+				break;
+
             default:
                 echo "Undefined message\n";
                 print_r($args);
                 break;
         }
-    }
+   	}
 }
 
 ?>

@@ -88,7 +88,7 @@ abstract class WebSocketConnection implements IWebSocketConnection {
             }
         }
         if($allZero) return true;
-        if(count($resources) == 0) return false;
+        if(count($resources) == 0) return $cost;
 
         $resource = array_pop($resources);
         if(is_array($resource->resources)){
@@ -110,7 +110,7 @@ abstract class WebSocketConnection implements IWebSocketConnection {
             }
         }
 
-        return false;
+        return $cost;
     }
 
     public function canPlayCard(WonderCard $card, $sendError = false){
@@ -135,7 +135,7 @@ abstract class WebSocketConnection implements IWebSocketConnection {
         // check if player has necessary resources
         $cost = $card->getResourceCost();
         $availableResources = array_merge($this->permResources, $this->tempResources);
-        if(!$this->checkResourceCost($cost, $availableResources)){
+        if($this->checkResourceCost($cost, $availableResources) !== true){
             if($sendError) $this->sendError("You don't have enough resources to play this card");
             return false;
         }
@@ -359,7 +359,6 @@ abstract class WebSocketConnection implements IWebSocketConnection {
     public function getSocket() {
         return $this->_socket;
     }
-
 }
 
 class WebSocketConnectionFlash {

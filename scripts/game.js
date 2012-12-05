@@ -179,13 +179,12 @@ SevenWonders.prototype = {
 						$('.options').css('display', 'none');
 					} else {
 						$('.card.selected').css('z-index', 1);
-						var self = this;
 						$('.card.selected').animate({width: cardWidth, height: cardHeight, left: '+=25px', bottom: '+=38px'}, 200);
 						$('.card:not(.ignore)').removeClass('selected');
-						$(self).addClass('selected');
+						$(this).addClass('selected');
 						$('.card:not(.ignore, #' + $(this).attr('id') + ')').animate({ opacity: 0.1 }, 200);
 						$('.options').css('display', 'none');
-						$(self).animate({
+						$(this).animate({
 							width: cardWidth + 50,
 							height: cardHeight + 76.5,
 							left: '-=25px',
@@ -195,6 +194,8 @@ SevenWonders.prototype = {
 							$(this).find('.options').fadeIn(200);
 							$(this).css('z-index', 2);
 						});
+
+						self.send({value: $(this).find('h1').html()}, 'checkresources');
 					}
 				});
 
@@ -311,6 +312,7 @@ SevenWonders.prototype = {
 
 			case 'resources':
 				var resources = args.resources;
+				console.log(resources);
 				// do things here?
 			break;
 
