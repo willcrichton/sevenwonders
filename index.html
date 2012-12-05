@@ -106,15 +106,11 @@
                     alert('Please enter a name for your game.');
                     return false;
                 }
-                var opts = { name: form.game_name.value };
+                var opts = { name: form.game_name.value,
+                             players: form.players.value};
                 send(opts, "newgame");
                 waitScreen();
 
-                return false;
-            };
-
-            window.startGame = function(){
-                send({}, "startgame");
                 return false;
             };
 
@@ -166,6 +162,14 @@
                                 <td><input type="text" name="game_name" /></td>
                             </tr>
                             <tr>
+                                <td># Players:</td>
+                                <td>
+                                    <input type='range' name='players' min='1'
+                                           max='7' value='1' />
+                                    <span id='numplayers'>1</span>
+                                </td>
+                            </tr>
+                            <tr>
                                 <td></td>
                                 <td><input type="submit" value="Start" /></td>
                             </tr>
@@ -179,9 +183,6 @@
             </div>
             <div id="waiting">
                 <h1>Waiting for Players...</h1>
-                <a href='#' id='start' onclick='return startGame();'>
-                    Start Game
-                </a>
                 <ul></ul>
             </div>
         </div>

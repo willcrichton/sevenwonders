@@ -4,14 +4,6 @@
 // Set date to avoid errors
 date_default_timezone_set("America/New_York");
 
-function arrowsToDirection($str){
-    $directions = array();
-    for($i = 0; $i < strlen($str); $i++){
-        $directions[] = $str[$i] == '<' ? 'left' : ($str[$i] == '>' ? 'right' : 'self');
-    }
-    return $directions;
-}
-
 function gentoken() {
     $chars = "abcdefghijklmnopqrstuvwxyz1234567890";
     $string = "";
@@ -86,32 +78,24 @@ class WonderServer implements IWebSocketServerObserver{
             case 'newgame':
                 if ($user->game() != null)
                     return;
+                // ERRORS NOT SHOWING ON CLIENT: FIX FIX FIX
+                if($arr['name'] == '')
+                    return $user->send('error', 'Game needs a valid name');
+
                 $game = new SevenWonders();
+                $game->maxplayers = intval($arr['players']);
                 $game->name = $arr['name'];
                 $game->id = gentoken();
                 $game->server = $this;
                 $game->addPlayer($user);
 
-                // ERRORS NOT SHOWING ON CLIENT: FIX FIX FIX
-                if($game->name == '')
-                    return $user->send('error', 'Game needs a valid name');
-
                 $this->games[] = $game;
-                $this->broadcast('newgame',
-                                 array('name' => $game->name,
-                                       'creator' => $game->creator->name(),
-                                       'id' => $game->id), $user);
-                break;
 
-            case 'startgame':
-                if ($user->game() == null)
-                    break;
-                if ($user == $user->game()->creator)
-                    break;
-                if ($user->game()->started)
-                    break;
-                $user->game()->startGame();
-                $this->say("Starting game {$user->game()->id}");
+                if ($game->maxplayers > 1)
+                    $this->broadcast('newgame',
+                                     array('name' => $game->name,
+                                           'creator' => $game->creator->name(),
+                                           'id' => $game->id), $user);
                 break;
 
             case 'joingame':
@@ -135,9 +119,10 @@ class WonderServer implements IWebSocketServerObserver{
                 break;
 
             default:
-                // if(isset($user->game)) $user->game->onMessage($user, $arr);
-                // else $user->sendString("Error: could not recognize command " . $arr['messageType']);
-                print_r($arr);
+                if($user->game() != null)
+                    $user->game()->onMessage($user, $arr);
+                else
+                    $user->send('error', "Error: could not recognize command " . $arr['messageType']);
                 break;
         }
     }
@@ -146,7 +131,7 @@ class WonderServer implements IWebSocketServerObserver{
         if (!isset($this->conns[$conn->getId()]))
             return;
         $user = $this->conns[$conn->getId()];
-        $this->say("{$user->getId()} disconnected");
+        $this->say("{$user->id()} disconnected");
         foreach($this->games as $game) {
             if(in_array($user, $game->players))
                 $game->removePlayer($user);

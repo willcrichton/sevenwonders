@@ -6,6 +6,7 @@ class SevenWonders {
     public $debug = true;
     public $name;
     public $players = array();
+    public $maxplayers;
     public $creator;
     public $id;
     public $deck;
@@ -15,40 +16,41 @@ class SevenWonders {
     public $turn = 1;
     public $cardsChosen = array();
     public $tradeQueue = array();
-    public $wonders = array(
-        array(
-            "name" => "Olympia",
-            "resource" => "wood"
-        ),
-        array(
-            "name" => "Rhodos",
-            "resource" => "ore",
-        ),
-        array(
-            "name" => "Alexandria",
-            "resource" => "glass"
-        ),
-        array(
-            "name" => "Ephesos",
-            "resource" => "paper"
-        ),
-        array(
-            "name" => "Halikarnassus",
-            "resource" => "linen"
-        ),
-        array(
-            "name" => "Gizah",
-            "resource" => "stone"
-        ),
-        array(
-            "name" => "Babylon",
-            "resource" => "clay"
-        )
-    );
+    public $wonders;
 
     public function __construct(){
         global $deck;
         $this->deck = $deck;
+        $this->wonders = array(
+            array(
+                "name" => "Olympia",
+                "resource" => Resource::one(Resource::WOOD)
+            ),
+            array(
+                "name" => "Rhodos",
+                "resource" => Resource::one(Resource::ORE)
+            ),
+            array(
+                "name" => "Alexandria",
+                "resource" => Resource::one(Resource::GLASS)
+            ),
+            array(
+                "name" => "Ephesos",
+                "resource" => Resource::one(Resource::PAPER)
+            ),
+            array(
+                "name" => "Halikarnassus",
+                "resource" => Resource::one(Resource::LINEN)
+            ),
+            array(
+                "name" => "Gizah",
+                "resource" => Resource::one(Resource::STONE)
+            ),
+            array(
+                "name" => "Babylon",
+                "resource" => Resource::one(Resource::CLAY)
+            )
+        );
     }
 
     public function log($msg){
@@ -68,6 +70,9 @@ class SevenWonders {
             $this->creator = $user;
         $this->players[] = $user;
         $user->setGame($this);
+
+        if (count($this->players) == $this->maxplayers)
+            $this->startGame();
     }
 
     public function startGame() {
@@ -95,11 +100,11 @@ class SevenWonders {
         for($i = 0; $i < count($this->players); $i++){
             $this->players[$i]->leftPlayer = $i == 0 ? $this->players[count($this->players) - 1] : $this->players[$i - 1];
             $this->players[$i]->rightPlayer = $i == (count($this->players) - 1) ? $this->players[0] : $this->players[$i + 1];
-            $this->players[$i]->setOrder($i + 1);
+            $this->players[$i]->order = $i + 1;
             $playerInfo[] = array(
-                'id' => $this->players[$i]->getId(),
-                'name' => $this->players[$i]->getName(),
-                'order' => $this->players[$i]->getOrder()
+                'id' => $this->players[$i]->id(),
+                'name' => $this->players[$i]->name(),
+                'order' => $this->players[$i]->order
             );
         }
 
@@ -110,19 +115,25 @@ class SevenWonders {
                 "wonder" => $player->wonder["name"],
                 "plinfo" => $playerInfo,
                 "resource" => $player->wonder['resource'],
-                "neighbors" => array('left' => $player->leftPlayer->getId(),
-                                     'right' => $player->rightPlayer->getId())
+                "neighbors" => array('left' => $player->leftPlayer->id(),
+                                     'right' => $player->rightPlayer->id())
             );
             $player->send("startinfo", $startInfo);
         }
 
-        // deal the cards
-        $this->deck->deal(1, $this->players);
+        $this->deal();
     }
 
-    public function getPlayerById($id){
-        foreach($this->players as $player)
-            if($player->getId() == $id) return $player;
+    public function deal() {
+        $this->deck->deal($this->age, $this->players);
+
+        // send start information
+        foreach ($this->players as $player) {
+            $player->send('hand',
+                          array('age' => 1,
+                                'cards' => $this->deck->cardInfo($player->hand)
+                          ));
+        }
     }
 
     public function removePlayer(Player $user){
@@ -130,9 +141,9 @@ class SevenWonders {
         unset($this->players[array_search($user, $this->players)]);
     }
 
-    public function broadcast($packet, $exclude = false){
+    public function broadcast($type, $msg){
         foreach($this->players as $player)
-            if(!$exclude || $player != $exclude) $player->sendString($packet);
+            $player->send($type, $msg);
     }
 
     public function rotateHands($moveLeft){
@@ -141,10 +152,62 @@ class SevenWonders {
         do {
             $neighbor = $moveLeft ? $player->rightPlayer : $player->leftPlayer;
             $player->hand = $neighbor == $player ? $tempHand : $neighbor->hand;
-            $packet = packet(array('cards' => $this->deck->cardInfo($player->hand)), "hand");
-            $player->sendString($packet);
+            $packet = array('cards' => $this->deck->cardInfo($player->hand));
+            $player->send('hand', $packet);
             $player = $neighbor;
         } while($player != $this->players[0]);
+    }
+
+    private function playCards() {
+        $this->log("All cards found");
+        $this->broadcast('cardschosen', array('cards' => $this->deck->cardInfo($this->cardsChosen, $this->players)));
+
+        // execute effects of all played cards
+        foreach ($this->players as $player) {
+            $card = $player->selectedCard;
+            if ($player->isTrashing) {
+                $this->log("{$player->info()} trashing " . $card->getName());
+                $player->addCoins(3);
+                $player->isTrashing = false;
+            //} elseif($player->isWonderBuilding == true){
+            } else {
+                $this->log("{$player->info()}) playing " . $card->getName());
+                $card->play($player);
+                $player->cardsPlayed[] = $card;
+            }
+            unset($player->hand[array_search($card, $player->hand)]);
+            unset($player->selectedCard);
+            $player->tempResources = array();
+        }
+
+        foreach($this->tradeQueue as $trade){
+            $trade['player']->addCoins($trade['coins']);
+        }
+        $this->tradeQueue = array();
+
+        $this->cardsChosen = array();
+        if ($this->turn == 6) {
+            // go into a new age
+            $this->log("Ending age {$this->age}");
+
+            $this->log("Evaluating military");
+            foreach ($this->players as $player) {
+                $player->evaluateMilitary($this->age);
+            }
+
+            $this->age++;
+            $this->turn = 1;
+            $this->deal();
+        } else {
+            // change hands and start a new turn
+            $this->log("Ending turn " . $this->turn);
+            $this->turn++;
+            $this->rotateHands($this->age != 2);
+        }
+
+        foreach($this->players as $player){
+            $this->log("{$player->info()} has {$player->calcPoints()} points");
+        }
     }
 
     public function onMessage(Player $user, $args){
@@ -152,85 +215,39 @@ class SevenWonders {
             case 'cardplay':
                 $cardName = $args['value'][0];
                 // match what they sent with a Card object
-                foreach($user->hand as $card)
-                {
+                foreach ($user->hand as $card) {
                     if($card->getName() == $cardName) $foundCard = $card;
                 }
-                if(isset($foundCard)){
-                    if($args['value'][1] == 'trash' or $user->canPlayCard($foundCard, true)){
-                        $this->log("User " . $user->name . " (" . $user->getId() . ") chose " . $foundCard->getName());
-                        $user->isTrashing = $args['value'][1] == 'trash';
-                        $this->cardsChosen[$user->getId()] = $foundCard;
-                        $user->selectedCard = $foundCard;
-                        $user->sendString(packet('','canplay'));
-                        // if everyone's played a card, execute cards and redeal/new turn
-                        if(count($this->cardsChosen) == count($this->players)){
-                            $this->log("All cards found");
-                            $this->broadcast(packet(array('cards' => $this->deck->cardInfo($this->cardsChosen, $this->players)), "cardschosen"));
-
-                            // execute effects of all played cards
-                            foreach($this->players as $player){
-                                if($player->isTrashing == true){
-                                    $this->log("User " . $user->name . " (" . $user->getId() . ") trashing " . $player->selectedCard->getName());
-                                    $player->addCoins(3);
-                                    $player->isTrashing = false;
-                                    //} elseif($player->isWonderBuilding == true){
-                            } else {
-                                $this->log("User " . $player->name . " (" . $user->getId() . ") playing " . $player->selectedCard->getName());
-                                $player->selectedCard->play($player, array() /*, more args here? */);
-                                $player->cardsPlayed[] = $player->selectedCard;
-                            }
-                            unset($player->hand[array_search($player->selectedCard, $player->hand)]);
-                            unset($player->selectedCard);
-                            $player->tempResources = array();
-                            }
-
-                            foreach($this->tradeQueue as $trade){
-                                $trade['player']->addCoins($trade['coins']);
-                            }
-                            $this->tradeQueue = array();
-
-                            $this->cardsChosen = array();
-                            if($this->turn == 6){
-                                // go into a new age
-                                $this->log("Ending age " . $this->age);
-
-                                $this->log("Evaluating military");
-                                foreach($this->players as $player){
-                                    $player->evaluateMilitary($this->age);
-                                }
-
-                                $this->age++;
-                                $this->turn = 1;
-                                $this->deck->deal($this->age, $this->players);
-                            } else {
-                                // change hands and start a new turn
-                                $this->log("Ending turn " . $this->turn);
-                                $this->turn++;
-                                $this->rotateHands($this->age != 2);
-                            }
-
-                            foreach($this->players as $player){
-                                $this->log("User " . $player->name . " (" . $player->getId() . ") has " . $player->calcPoints() . " points");
-                            }
-                        }
-                    } else {
-                        // error: user can't play the card
-                    }
+                if (!isset($foundCard)) // don't have the specified card
+                    break;
+                if ($args['value'][1] == 'trash') {
+                    $user->isTrashing = true;
                 } else {
-                    // error: you cheating motherfucker, you don't have that card in your hand
-                    $user->sendError("Pssht, you gotta try harder than that.");
+                    $err = $user->canPlayCard($foundCard);
+                    if ($err != '') {
+                        $user->sendError($err);
+                        break;
+                    }
+                    $user->isTrashing = false;
+                }
+                $this->log("{$user->info()} chose {$foundCard->getName()}");
+                $this->cardsChosen[$user->id()] = $foundCard;
+                $user->selectedCard = $foundCard;
+                $user->send('canplay', '');
+                // if everyone's played a card, execute cards and redeal/new turn
+                if (count($this->cardsChosen) == count($this->players)) {
+                    $this->playCards();
                 }
                 break;
 
             case 'cardignore':
                 $user->isTrashing = false;
-                unset($user->selectedHard);
-                unset($this->cardsChosen[$user->getId()]);
+                unset($user->selectedCard);
+                unset($this->cardsChosen[$user->id()]);
                 break;
 
             case 'trade':
-                $this->log("User " . $user->name . " is trading");
+                $this->log("{$user->info()} is trading");
                 $leftTotal = 0;
 
                 $leftFilter = array_filter($user->leftPlayer->permResources, function($var){ return $var->buyable; });
@@ -238,6 +255,7 @@ class SevenWonders {
                     $user->sendError("Left player doesn't have those resources");
                     return;
                 }
+                /* TODO: change this */
                 foreach($args['left'] as $resource => $amount){
                     $discount = isset($user->discounts['left'][$resource]) ? $user->discounts['left'][$resource] : 0;
                     $leftTotal += max((2 - $discount) * $amount, 0);
@@ -278,24 +296,20 @@ class SevenWonders {
                     }
                 }
 
-                $user->sendString(packet(array('resources' => $user->tempResources), 'bought'));
+                $user->send('bought', array('resources' => $user->tempResources));
                 break;
 
             case 'checkresources':
-				$cardName = $args['value'];
-				foreach($user->hand as $card)
-					if($card->getName() == $cardName) $toPlay = $card;
-				
-				if(!isset($toPlay)){
-					$user->sendError("You don't have that card");
-					return;
-				}
+                $cardName = $args['value'];
+                foreach($user->hand as $card)
+                    if($card->getName() == $cardName)
+                        $toPlay = $card;
+                if(!isset($toPlay))
+                    return;
 
-				$cost = $toPlay->getResourceCost();
-				$resources = array_merge($user->permResources, $user->tempResources);
-				$packet = packet(array('resources' => $user->checkResourceCost($cost, $resources)), 'resourcesneeded');
-				$user->sendString($packet);
-				break;
+                // TODO: this is wrong now
+                // $user->send('resourcesneeded', $user->missingCost($toPlay));
+                break;
 
             default:
                 echo "Undefined message\n";
