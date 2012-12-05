@@ -1,45 +1,82 @@
 <?php
 
+require_once('scoring.php');
+
 class Player {
+    // General player state
+    private $_id;
+    private $_name;
+    private $_conn;
+    private $_game;
 
-    private $id;
-    private $name;
-    private $conn;
-
-    public $game;
-    private $coins = 0;
-    private $permResources = array();
-    private $tempResources = array();
-    private $wonder;
-    private $order;
-    private $hand;
-    private $selectedCard;
-    private $cardsPlayed = array();
-    private $military = 0;
-    private $militaryPoints = array(0,0,0,0,0,0);
-    private $points = 0;
-    private $science = array(0, 0, 0, 0);
-    private $isTrashing = false;
-    private $isBuildWonder = false;
-    private $leftPlayer;
-    private $rightPlayer;
-    private $discounts = array('left' => array(), 'right' => array());
+    // Game state
+    public $coins;
+    public $permResources;
+    public $tempResources;
+    public $wonder;
+    public $order;
+    public $hand;
+    public $selectedCard;
+    public $cardsPlayed;
+    public $military;
+    public $militaryPoints;
+    public $points;
+    public $science;
+    public $isTrashing;
+    public $isBuildWonder;
+    public $leftPlayer;
+    public $rightPlayer;
+    public $discounts;
 
     public function __construct($id, $unique) {
-        $this->name = "Guest $unique";
-        $this->id = $id;
+        $this->_name = "Guest $unique";
+        $this->_id = $id;
     }
 
-    public function getId() {
-        return $this->id;
+    public function id() {
+        return $this->_id;
     }
 
-    public function getName() {
-        return $this->name;
+    public function name() {
+        return $this->_name;
     }
 
     public function setName($name) {
-        $this->name = $name;
+        $this->_name = $name;
+    }
+
+    public function order() {
+        return $this->_order;
+    }
+
+    public function setOrder($order) {
+        $this->order = $order;
+    }
+
+    public function setGame($game) {
+        if ($this->_game != null)
+            throw new Exception("already in a game");
+        $this->_game = $game;
+        $this->coins = 0;
+        $this->permResources = array();
+        $this->tempResources = array();
+        $this->wonder = null;
+        $this->order = -1;
+        $this->hand = null;
+        $this->selectedCard = null;
+        $this->cardsPlayed = array();
+        $this->points = 0;
+        $this->military = new Military();
+        $this->science = new Science();
+        $this->isTrashing = false;
+        $this->isBuildWonder = false;
+        $this->leftPlayer = null;
+        $this->rightPlayer = null;
+        $this->discounts = array('left' => array(), 'right' => array());
+    }
+
+    public function game() {
+        return $this->_game;
     }
 
     public function setConnection(IWebSocketConnection $conn) {

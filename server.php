@@ -30,7 +30,7 @@ require_once("player.php");
 class WonderServer implements IWebSocketServerObserver{
     protected $debug = true;
     protected $server;
-    protected $users = array(); // all users ever (keyed by $user->getId)
+    protected $users = array(); // all users ever (keyed by $user->id)
     protected $conns = array(); // all active connections (keyed by $conn->id)
     protected $games = array();
 
@@ -42,14 +42,10 @@ class WonderServer implements IWebSocketServerObserver{
     public function onConnect(IWebSocketConnection $user){
     }
 
-    public function broadcastAll($msg, $exclude=false){
-        foreach($this->users as $u)
-            if(!$exclude || $u != $exclude) $u->sendString($msg);
-    }
-
-    public function broadcastTo($msg, $players, $exclude=false){
-        foreach($players as $player)
-            if(!$exclude || $player != $exclude) $player->sendString($msg);
+    public function broadcast($type, $msg, $exclude=null){
+        foreach($this->conns as $u)
+            if($u != $exclude)
+                $u->send($type, $msg);
     }
 
     public function onMessage(IWebSocketConnection $conn, IWebSocketMessage $msg){
@@ -61,12 +57,12 @@ class WonderServer implements IWebSocketServerObserver{
             } else {
                 $user = new Player(gentoken(), $conn->getId());
             }
-            $this->users[$user->getId()] = $user;
+            $this->users[$user->id()] = $user;
             $this->conns[$conn->getId()] = $user;
             $user->setConnection($conn);
             $user->send('myname',
-                        array('name' => $user->getName(),
-                              'id'   => $user->getId()));
+                        array('name' => $user->name(),
+                              'id'   => $user->id()));
             foreach($this->games as $game) {
                 if ($game->started)
                     continue;
@@ -76,7 +72,7 @@ class WonderServer implements IWebSocketServerObserver{
                                   'id' => $game->id));
             }
 
-            $this->say("{$user->getId()} connected");
+            $this->say("{$user->id()} connected");
             return;
         }
 
@@ -88,22 +84,34 @@ class WonderServer implements IWebSocketServerObserver{
 
         switch($arr['messageType']){
             case 'newgame':
+                if ($user->game() != null)
+                    return;
                 $game = new SevenWonders();
                 $game->name = $arr['name'];
-                $game->maxplayers = intval($arr['players']);
-                $game->id = count($this->games);
+                $game->id = gentoken();
                 $game->server = $this;
                 $game->addPlayer($user);
 
                 // ERRORS NOT SHOWING ON CLIENT: FIX FIX FIX
-                if($game->maxplayers > 7 or $game->maxplayers < 1)
-                    return $user->sendString(packet('Cannot create game: number of players invalid', 'error'));
-                elseif($game->name == '')
-                    return $user->sendString(packet('Game needs a valid name', 'error'));
+                if($game->name == '')
+                    return $user->send('error', 'Game needs a valid name');
 
                 $this->games[] = $game;
-                $packet = packet(array('name' => $game->name, 'creator' => $game->creator->name, 'id' => $game->id), "newgame");
-                $this->broadcastAll($packet, $user);
+                $this->broadcast('newgame',
+                                 array('name' => $game->name,
+                                       'creator' => $game->creator->name(),
+                                       'id' => $game->id), $user);
+                break;
+
+            case 'startgame':
+                if ($user->game() == null)
+                    break;
+                if ($user == $user->game()->creator)
+                    break;
+                if ($user->game()->started)
+                    break;
+                $user->game()->startGame();
+                $this->say("Starting game {$user->game()->id}");
                 break;
 
             case 'joingame':
@@ -120,7 +128,7 @@ class WonderServer implements IWebSocketServerObserver{
                 break;
 
             case 'changename':
-                if ($user->game == null && $arr['name'] != '') {
+                if ($user->game() == null && $arr['name'] != '') {
                     $user->setName($arr['name']);
                 }
                 // Broadcast name change here in case they're hosting a game?

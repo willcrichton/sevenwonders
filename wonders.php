@@ -5,7 +5,6 @@ require_once("cards.php");
 class SevenWonders {
     public $debug = true;
     public $name;
-    public $maxplayers = 7;
     public $players = array();
     public $creator;
     public $id;
@@ -17,35 +16,35 @@ class SevenWonders {
     public $cardsChosen = array();
     public $tradeQueue = array();
     public $wonders = array(
-            array(
-                "name" => "Olympia",
-                "resource" => "wood"
-                ),
-            array(
-                "name" => "Rhodos",
-                "resource" => "ore",
-                ),
-            array(
-                "name" => "Alexandria",
-                "resource" => "glass"
-                ),
-            array(
-                "name" => "Ephesos",
-                "resource" => "paper"
-                ),
-            array(
-                "name" => "Halikarnassus",
-                "resource" => "linen"
-                ),
-            array(
-                    "name" => "Gizah",
-                    "resource" => "stone"
-                 ),
-            array(
-                    "name" => "Babylon",
-                    "resource" => "clay"
-                 )
-                );
+        array(
+            "name" => "Olympia",
+            "resource" => "wood"
+        ),
+        array(
+            "name" => "Rhodos",
+            "resource" => "ore",
+        ),
+        array(
+            "name" => "Alexandria",
+            "resource" => "glass"
+        ),
+        array(
+            "name" => "Ephesos",
+            "resource" => "paper"
+        ),
+        array(
+            "name" => "Halikarnassus",
+            "resource" => "linen"
+        ),
+        array(
+            "name" => "Gizah",
+            "resource" => "stone"
+        ),
+        array(
+            "name" => "Babylon",
+            "resource" => "clay"
+        )
+    );
 
     public function __construct(){
         global $deck;
@@ -57,70 +56,68 @@ class SevenWonders {
             echo "Game " . $this->id . " (turn " . $this->turn . ", age " . $this->age . "): $msg\n";
     }
 
-    public function addPlayer(IWebSocketConnection $user){
-        if(count($this->players) == 0) $this->creator = $user;
-        $this->players[] = $user;
-        $user->game = $this;
-
-        $packet = packet(array('id' => $user->getId(), 'name' => $user->name), 'newplayer');
+    public function addPlayer(Player $user){
         foreach($this->players as $player){
-            if($player != $user){
-                $player->sendString($packet);
-                $user->sendString(packet(array('id' => $player->getId(), 'name' => $player->name), 'newplayer'));
-            }
+            $player->send('newplayer', array('id' => $user->getId(),
+                                             'name' => $user->getName()));
+            $user->send('newplayer', array('id' => $player->getId(),
+                                           'name' => $player->getName()));
         }
 
+        if(count($this->players) == 0)
+            $this->creator = $user;
+        $this->players[] = $user;
+        $user->setGame($this);
+    }
+
+    public function startGame() {
         // tell the players we're starting the game
-        if(count($this->players) == $this->maxplayers){
-            $this->started = true;
-            $packet = packet(array('id' => $this->id), 'started');
-            $this->server->broadcastAll($packet);
+        $this->started = true;
+        $this->server->broadcast('started', array('id' => $this->id));
 
-            // give clients time to receive start signal
-            sleep(0.1);
+        // set up the start conditions
+        $wonderKeys = array_keys($this->wonders);
+        shuffle($wonderKeys);
+        foreach($this->players as $player){
+            // starting moneyz
+            $player->coins = 3;
 
-            // set up the start conditions
-            $wonderKeys = array_keys($this->wonders);
-            foreach($this->players as $player){
-                // starting moneyz
-                $player->coins = 3;
-
-                // select a wonder
-                $wonder = array_rand($wonderKeys);
-                $player->wonder = $this->wonders[$wonderKeys[$wonder]];
-                $player->addResource($player->wonder['resource'], 1);
-                unset($wonderKeys[$wonder]);
-            }
-
-            // shuffle order of players
-            shuffle($this->players);
-            $playerInfo = array();
-            for($i = 0; $i < count($this->players); $i++){
-                $this->players[$i]->leftPlayer = $i == 0 ? $this->players[count($this->players) - 1] : $this->players[$i - 1];
-                $this->players[$i]->rightPlayer = $i == (count($this->players) - 1) ? $this->players[0] : $this->players[$i + 1];
-                $this->players[$i]->order = $i + 1;
-                $playerInfo[] = array(
-                        'id' => $this->players[$i]->getId(),
-                        'name' => $this->players[$i]->name,
-                        'order' => $this->players[$i]->order
-                        );
-            }
-
-            // send start information
-            foreach($this->players as $player){
-                $startInfo = array(
-                        "coins" => 3,
-                        "wonder" => $player->wonder["name"],
-                        "plinfo" => $playerInfo,
-                        "resource" => $player->wonder['resource'],
-                        "neighbors" => array('left' => $player->leftPlayer->getId(), 'right' => $player->rightPlayer->getId())
-                        );
-                $player->sendString(packet($startInfo, "startinfo"));
-            }
-
-            // deal the cards
-            $this->deck->deal(1, $this->players);
+            // select a wonder
+            $wonder = $this->wonders[array_pop($wonderKeys)];
+            $player->wonder = $wonder;
+            $player->addResource($wonder['resource'], 1);
         }
+
+        // shuffle order of players
+        shuffle($this->players);
+
+        $playerInfo = array();
+        for($i = 0; $i < count($this->players); $i++){
+            $this->players[$i]->leftPlayer = $i == 0 ? $this->players[count($this->players) - 1] : $this->players[$i - 1];
+            $this->players[$i]->rightPlayer = $i == (count($this->players) - 1) ? $this->players[0] : $this->players[$i + 1];
+            $this->players[$i]->setOrder($i + 1);
+            $playerInfo[] = array(
+                'id' => $this->players[$i]->getId(),
+                'name' => $this->players[$i]->getName(),
+                'order' => $this->players[$i]->getOrder()
+            );
+        }
+
+        // send start information
+        foreach($this->players as $player){
+            $startInfo = array(
+                "coins" => $player->coins,
+                "wonder" => $player->wonder["name"],
+                "plinfo" => $playerInfo,
+                "resource" => $player->wonder['resource'],
+                "neighbors" => array('left' => $player->leftPlayer->getId(),
+                                     'right' => $player->rightPlayer->getId())
+            );
+            $player->send("startinfo", $startInfo);
+        }
+
+        // deal the cards
+        $this->deck->deal(1, $this->players);
     }
 
     public function getPlayerById($id){
@@ -128,7 +125,7 @@ class SevenWonders {
             if($player->getId() == $id) return $player;
     }
 
-    public function removePlayer(IWebSocketConnection $user){
+    public function removePlayer(Player $user){
         // drop player from game
         unset($this->players[array_search($user, $this->players)]);
     }
@@ -150,7 +147,7 @@ class SevenWonders {
         } while($player != $this->players[0]);
     }
 
-    public function onMessage(IWebSocketConnection $user, $args){
+    public function onMessage(Player $user, $args){
         switch($args['messageType']){
             case 'cardplay':
                 $cardName = $args['value'][0];

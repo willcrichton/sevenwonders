@@ -19,7 +19,6 @@
 
             function send(opts, type){
                 opts.messageType = type;
-                opts.id = my_id;
                 socket.send(JSON.stringify(opts));
             }
 
@@ -102,18 +101,22 @@
                 });
             });
 
-
-            function newGame(form){
+            window.newGame = function(form){
                 if(form.game_name.value == ''){
                     alert('Please enter a name for your game.');
                     return false;
                 }
-                var opts = { name: form.game_name.value, players: form.players.value };
+                var opts = { name: form.game_name.value };
                 send(opts, "newgame");
                 waitScreen();
 
                 return false;
-            }
+            };
+
+            window.startGame = function(){
+                send({}, "startgame");
+                return false;
+            };
 
             function waitScreen(){
                 $('#lobby').fadeOut(500, function(){
@@ -129,21 +132,20 @@
                 status = "waiting";
             }
 
-            function joinGame(id){
+            window.joinGame = function(id){
                 var opts = { id: id };
                 send(opts, "joingame");
                 waitScreen();
 
                 return false;
-            }
+            };
 
-            function changeName(form){
+            window.changeName = function(form){
                 var opts = { name: form.name.value };
                 send(opts, "changename");
                 my_name = opts.name;
                 return false;
-            }
-            window.changeName = changeName;
+            };
         })();
         </script>
     </head>
@@ -164,10 +166,6 @@
                                 <td><input type="text" name="game_name" /></td>
                             </tr>
                             <tr>
-                                <td># Players:</td>
-                                <td><input type="range" name="players" min="1" max="7" value="1" /> <span id="numplayers">1</span></td>
-                            </tr>
-                            <tr>
                                 <td></td>
                                 <td><input type="submit" value="Start" /></td>
                             </tr>
@@ -181,6 +179,9 @@
             </div>
             <div id="waiting">
                 <h1>Waiting for Players...</h1>
+                <a href='#' id='start' onclick='return startGame();'>
+                    Start Game
+                </a>
                 <ul></ul>
             </div>
         </div>
