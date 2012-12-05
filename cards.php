@@ -274,7 +274,6 @@ class WonderDeck {
 
         foreach($players as $player){
             $hand = array_splice($playableCards, 0, 7);
-            $this->hands[$player->getId()] = $hand;
             $player->hand = $hand;
             $packet = packet(array('cards' => $this->cardInfo($hand, array()), 'age' => $age), "hand");
             $player->sendString($packet);
