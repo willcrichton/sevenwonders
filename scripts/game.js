@@ -14,12 +14,6 @@ var SevenWonders = function(socket, args){
     // TODO: let player choose wonder side
     $('#wonder').css('background', 'url(images/' + this.wonder.toLowerCase() + 'A.png) no-repeat center center');
 
-    // Add coins
-    var rot = (Math.random() - 0.5) * 300;
-    var img = $('<img src="images/coin3.png" />');
-    img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
-    $('#coins').append(img);
-
     var panelOut = false;
     $('#resources a').click(function(){
         if(panelOut){
@@ -40,7 +34,8 @@ var SevenWonders = function(socket, args){
             }
         })
         self.send(info, 'trade')
-    })
+    });
+    this.updateCoins();
 }
 
 SevenWonders.prototype = {
@@ -52,6 +47,26 @@ SevenWonders.prototype = {
 
     cardImageFromName: function(name){
         return '<img src="images/' + name.toLowerCase().replace(/ /g, "") + '.png" />';
+    },
+
+    updateCoins: function() {
+        var golds = Math.floor(this.coins / 3);
+        var silvers = this.coins % 3;
+        $('#coins').html('');
+        for(var i = 0; i < silvers; i++){
+            var rot = (Math.random() - 0.5) * 300;
+            var img = $('<img src="images/coin1.png" class="silver" />');
+            img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
+            $('#coins').append(img);
+        }
+        $('#coins').append('<br />');
+
+        for(var i = 0; i < golds; i++){
+            var rot = (Math.random() - 0.5) * 300;
+            var img = $('<img src="images/coin3.png" class="gold" />');
+            img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
+            $('#coins').append(img);
+        }
     },
 
     onMessage: function(args, msg){
@@ -286,25 +301,9 @@ SevenWonders.prototype = {
             break;
 
             case 'coins':
-                var coins = args.data;
-                var golds = Math.floor(coins / 3);
-                var silvers = coins % 3;
-                $('#coins').html('');
-                for(var i = 0; i < silvers; i++){
-                    var rot = (Math.random() - 0.5) * 300;
-                    var img = $('<img src="images/coin1.png" class="silver" />');
-                    img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
-                    $('#coins').append(img);
-                }
-                $('#coins').append('<br />');
-
-                for(var i = 0; i < golds; i++){
-                    var rot = (Math.random() - 0.5) * 300;
-                    var img = $('<img src="images/coin3.png" class="gold" />');
-                    img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
-                    $('#coins').append(img);
-                }
-            break;
+                this.coins = args.data;
+                this.updateCoins();
+                break;
 
             case 'resources':
                 var resources = args.resources;
