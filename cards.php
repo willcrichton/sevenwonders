@@ -291,6 +291,13 @@ class WonderCard {
         }
         return $total;
     }
+
+    public function json() {
+        return array(
+            'name' => $this->getName(),
+            'color' => $this->getColor()
+        );
+    }
 }
 
 class WonderDeck {
@@ -306,24 +313,6 @@ class WonderDeck {
                 $this->cards[] = $card;
             }
         }
-    }
-
-    public function cardInfo($cards, $players = array()){
-        $info = array();
-        foreach($cards as $id => $card){
-            $cInfo = array(
-                    'name' => $card->getName(),
-                    'color' => $card->getColor(),
-                    'id' => $id
-                    );
-            foreach($players as $pl){
-                if($pl->id() == $id and
-                   ($pl->isTrashing or $pl->isBuildWonder))
-                    $cInfo['trashing'] = true;
-            }
-            $info[] = $cInfo;
-        }
-        return $info;
     }
 
     public function deal($age, $players){

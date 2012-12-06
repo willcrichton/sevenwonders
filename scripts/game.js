@@ -245,6 +245,7 @@ SevenWonders.prototype = {
             case 'cardschosen':
                 var self = this;
                 var updateColumn = function(side, color, img){
+                    img = $('<div class="card ignore played">' + img + '</div>');
                     var cardsPlayed = side == 'left' ? self.leftPlayed : self.rightPlayed;
                     if(cardsPlayed[color] == undefined) cardsPlayed[color] = [];
                     var length = cardsPlayed[color].length;
@@ -273,19 +274,14 @@ SevenWonders.prototype = {
                 }
 
 
-                for(c in args.cards){
-                    if(args.cards[c].trashing) continue;
-                    var color = args.cards[c].color;
-                    var pl;
-                    for(i in this.players)
-                        if(this.players[i].id == args.cards[c].id) pl = this.players[i];
-                    var img = this.cardImageFromName(args.cards[c].name);
-                    img = $('<div class="card ignore played">' + img + '</div>');
-                    if(pl.id == this.neighbors.left){
-                        updateColumn('left', color, img)
-                    } else if(pl.id == this.neighbors.right){
-                        updateColumn('right', color, img);
-                    }
+                console.log(args);
+                if (args.left) {
+                    updateColumn('left', args.left.color,
+                                 this.cardImageFromName(args.left.name));
+                }
+                if (args.right) {
+                    updateColumn('right', args.right.color,
+                                 this.cardImageFromName(args.right.name));
                 }
             break;
 

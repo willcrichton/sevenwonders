@@ -126,14 +126,8 @@ class SevenWonders {
 
     public function deal() {
         $this->deck->deal($this->age, $this->players);
-
-        // send start information
-        foreach ($this->players as $player) {
-            $player->send('hand',
-                          array('age' => 1,
-                                'cards' => $this->deck->cardInfo($player->hand)
-                          ));
-        }
+        foreach ($this->players as $player)
+            $player->sendHand();
     }
 
     public function removePlayer(Player $user){
@@ -152,18 +146,22 @@ class SevenWonders {
         do {
             $neighbor = $moveLeft ? $player->rightPlayer : $player->leftPlayer;
             $player->hand = $neighbor == $player ? $tempHand : $neighbor->hand;
-            $packet = array('cards' => $this->deck->cardInfo($player->hand));
-            $player->send('hand', $packet);
+            $player->sendHand();
             $player = $neighbor;
         } while($player != $this->players[0]);
     }
 
     private function playCards() {
         $this->log("All cards found");
-        $this->broadcast('cardschosen', array('cards' => $this->deck->cardInfo($this->cardsChosen, $this->players)));
 
         // execute effects of all played cards
         foreach ($this->players as $player) {
+            $data = array();
+            if (!$player->leftPlayer->isTrashing)
+                $data['left'] = $player->leftPlayer->selectedCard->json();
+            if (!$player->rightPlayer->isTrashing)
+                $data['right'] = $player->rightPlayer->selectedCard->json();
+            $player->send('cardschosen', $data);
             $card = $player->selectedCard;
             if ($player->isTrashing) {
                 $this->log("{$player->info()} trashing " . $card->getName());
@@ -176,9 +174,11 @@ class SevenWonders {
                 $player->cardsPlayed[] = $card;
             }
             unset($player->hand[array_search($card, $player->hand)]);
-            unset($player->selectedCard);
             $player->tempResources = array();
         }
+
+        foreach ($this->players as $player)
+            unset($player->selectedCard);
 
         foreach($this->tradeQueue as $trade){
             $trade['player']->addCoins($trade['coins']);

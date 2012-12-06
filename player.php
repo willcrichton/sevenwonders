@@ -162,4 +162,10 @@ class Player {
         return $this; // 'self'
     }
 
+    public function sendHand() {
+        $info = array_map(function($c) { return $c->json(); }, $this->hand);
+        $this->send('hand',
+                    array('age' => $this->_game->age, 'cards' => $info));
+    }
+
 }
