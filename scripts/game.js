@@ -225,14 +225,16 @@ SevenWonders.prototype = {
                     var card = $(this).parent().parent();
                     chooseCard(card, 'trash');
                     self.trashing = true;
-                })
+                    return false;
+                });
 
                 $('.play').click(function(e){
                     e.stopPropagation()
                     var card = $(this).parent().parent();
                     chooseCard(card, 'play');
                     self.trashing = false;
-                })
+                    return false;
+                });
 
                 $('.undo').click(function(e){
                     e.stopPropagation();
@@ -244,7 +246,8 @@ SevenWonders.prototype = {
                         $(this).css('display', 'none');
                         card.find('.options a:not(.undo)').css('display', 'block').animate({ opacity: 1 }, 200);
                     });
-                })
+                    return false;
+                });
 
             break;
 
