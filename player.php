@@ -169,6 +169,7 @@ class Player {
     }
 
     public function sendStartInfo($playerInfo) {
+        $tojson = function($a) { return $a->json(); };
         $startInfo = array(
             "coins" => $this->coins,
             "wonder" => $this->wonder["name"],
@@ -176,7 +177,9 @@ class Player {
             "resource" => $this->wonder['resource'],
             "military" => $this->military->json(),
             "neighbors" => array('left' => $this->leftPlayer->id(),
-                                 'right' => $this->rightPlayer->id())
+                                 'right' => $this->rightPlayer->id()),
+            'leftcards' => array_map($tojson, $this->leftPlayer->cardsPlayed),
+            'rightcards' => array_map($tojson, $this->rightPlayer->cardsPlayed)
         );
         $this->send("startinfo", $startInfo);
     }

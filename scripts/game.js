@@ -37,6 +37,13 @@ var SevenWonders = function(socket, args){
     });
     this.updateCoins();
     this.updateMilitary(args.military);
+    var i;
+    for (i = 0; i < args.leftcards.length; i++)
+        this.updateColumn('left', args.leftcards[i].color,
+                          this.cardImageFromName(args.leftcards[i].name));
+    for (i = 0; i < args.rightcards.length; i++)
+        this.updateColumn('right', args.rightcards[i].color,
+                          this.cardImageFromName(args.rightcards[i].name));
 }
 
 SevenWonders.prototype = {
@@ -71,7 +78,6 @@ SevenWonders.prototype = {
     },
 
     updateMilitary: function(args) {
-        console.log(args);
         $('#military').html('');
         var points = {1 : 'victory1', 3: 'victory3', 5: 'victory5' };
         points[-1] = 'victoryminus1';
@@ -85,6 +91,35 @@ SevenWonders.prototype = {
             }
             if(n > 0) $('#military').append('<br />');
         }
+    },
+
+    updateColumn: function(side, color, img) {
+        img = $('<div class="card ignore played">' + img + '</div>');
+        var cardsPlayed = side == 'left' ? this.leftPlayed : this.rightPlayed;
+        if(cardsPlayed[color] == undefined) cardsPlayed[color] = [];
+        var length = cardsPlayed[color].length;
+        img.appendTo('.neighbor.' + side);
+        var bottom = -160;
+        var lastIndex = 0;
+        for(var i = this.colorOrder.indexOf(color); i >= 0; i--){
+            var col = this.colorOrder[i];
+            lastIndex = i;
+            if(cardsPlayed[col] && cardsPlayed[col].length > 0){
+                var topCard = cardsPlayed[col][cardsPlayed[col].length - 1];
+                bottom = img.get(0) == topCard ? 0 : parseInt($(topCard).css('bottom')) + 40;
+                break;
+            }
+        }
+        for(var j = lastIndex + 1; j < this.colorOrder.length; j++){
+            for(cIndex in cardsPlayed[this.colorOrder[j]]){
+                var card_move = $(cardsPlayed[this.colorOrder[j]][cIndex]);
+                card_move.animate({bottom: '+=40px'}, 200);
+            }
+        }
+        img.css('bottom', bottom);
+        img.css('z-index', 1000 * (8 - this.colorOrder.indexOf(color)) - length);
+        cardsPlayed[color].push(img.get(0));
+        img.animate({opacity: 1}, 200);
     },
 
     onMessage: function(args, msg){
@@ -279,46 +314,12 @@ SevenWonders.prototype = {
             break;
 
             case 'cardschosen':
-                var self = this;
-                var updateColumn = function(side, color, img){
-                    img = $('<div class="card ignore played">' + img + '</div>');
-                    var cardsPlayed = side == 'left' ? self.leftPlayed : self.rightPlayed;
-                    if(cardsPlayed[color] == undefined) cardsPlayed[color] = [];
-                    var length = cardsPlayed[color].length;
-                    img.appendTo('.neighbor.' + side);
-                    var bottom = -160;
-                    var lastIndex = 0;
-                    for(var i = self.colorOrder.indexOf(color); i >= 0; i--){
-                        var col = self.colorOrder[i];
-                        lastIndex = i;
-                        if(cardsPlayed[col] && cardsPlayed[col].length > 0){
-                            var topCard = cardsPlayed[col][cardsPlayed[col].length - 1];
-                            bottom = img.get(0) == topCard ? 0 : parseInt($(topCard).css('bottom')) + 40;
-                            break;
-                        }
-                    }
-                    for(var j = lastIndex + 1; j < self.colorOrder.length; j++){
-                        for(cIndex in cardsPlayed[self.colorOrder[j]]){
-                            var card_move = $(cardsPlayed[self.colorOrder[j]][cIndex]);
-                            card_move.animate({bottom: '+=40px'}, 200);
-                        }
-                    }
-                    img.css('bottom', bottom);
-                    img.css('z-index', 1000 * (8 - self.colorOrder.indexOf(color)) - length);
-                    cardsPlayed[color].push(img.get(0));
-                    img.animate({opacity: 1}, 200);
-                }
-
-
-                console.log(args);
-                if (args.left) {
-                    updateColumn('left', args.left.color,
-                                 this.cardImageFromName(args.left.name));
-                }
-                if (args.right) {
-                    updateColumn('right', args.right.color,
-                                 this.cardImageFromName(args.right.name));
-                }
+                if (args.left)
+                    this.updateColumn('left', args.left.color,
+                                      this.cardImageFromName(args.left.name));
+                if (args.right)
+                    this.updateColumn('right', args.right.color,
+                                      this.cardImageFromName(args.right.name));
             break;
 
             case 'coins':
