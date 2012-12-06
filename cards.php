@@ -217,7 +217,7 @@ class WonderCard {
                 break;
 
             case 'green':
-                $user->science->add(intval($command));
+                $user->science->add(intval($this->command));
                 break;
 
             case 'purple':
