@@ -35,6 +35,10 @@ class Resource {
     }
 
     public static function satisfiable($cost, $have) {
+        return count(self::satisfy($cost, $have)) == 0;
+    }
+
+    public static function satisfy($cost, $have) {
         $total = array(self::STONE => 0, self::WOOD => 0, self::ORE => 0,
                        self::CLAY => 0, self::LINEN => 0, self::GLASS => 0,
                        self::PAPER => 0);
@@ -44,10 +48,12 @@ class Resource {
             }
         }
 
-        return self::tryuse($have, $total);
+        $ret = array();
+        self::tryuse($have, $total, $ret);
+        return $ret;
     }
 
-    private static function tryuse($resources, $costs) {
+    private static function tryuse($resources, $costs, &$ret) {
         $allZero = true;
         foreach ($costs as $amount) {
             if ($amount > 0) {
@@ -55,21 +61,29 @@ class Resource {
                 break;
             }
         }
-        if ($allZero) return true;
-        if (count($resources) == 0) return false;
+        if ($allZero) {
+            $ret = array();
+            return true;
+        }
+        if (count($resources) == 0) {
+            $ret[] = $costs;
+            return false;
+        }
 
         $resource = array_pop($resources);
         if ($resource->only_one) {
             // If we can only use one of these resources, try each one
             // individually and see if we can satisfy
+            $tried = false;
             foreach ($resource->amts as $type => $amt) {
                 if ($costs[$type] <= 0) continue;
+                $tried = true;
                 $costs[$type] -= $amt;
-                if (self::tryuse($resources, $costs)) return true;
+                if (self::tryuse($resources, $costs, $ret)) return true;
                 $costs[$type] += $amt;
             }
             // Otherwise try just not using this resource
-            return self::tryuse($resources, $costs);
+            return $tried ? false : self::tryuse($resources, $costs, $ret);
         }
 
         // If we can use this multi-resource, then use as much of it as possible
@@ -78,7 +92,7 @@ class Resource {
             if ($costs[$type] > 0) $costs[$type] -= $amt;
         }
 
-        return self::tryuse($resources, $costs);
+        return self::tryuse($resources, $costs, $ret);
     }
 }
 

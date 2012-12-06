@@ -37,6 +37,15 @@ test(Resource::satisfiable(array($clay, $wood), array($clay, $caravan)));
 test(!Resource::satisfiable(array($clay, $wood), array($clay2)));
 test(!Resource::satisfiable(array($clay, $wood), array($ore)));
 
+$ret = Resource::satisfy(array($clay), array());
+test(count($ret) == 1);
+test($ret[0][Resource::CLAY] == 1);
+
+$ret = Resource::satisfy(array($clay, $wood), array($caravan));
+test(count($ret) == 2);
+test($ret[0][Resource::CLAY] == 1);
+test($ret[1][Resource::WOOD] == 1);
+
 // Test science scoring
 $s1 = new Science();
 test($s1->points() == 0);
