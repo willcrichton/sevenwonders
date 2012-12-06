@@ -182,6 +182,7 @@ class Player {
 
     public function rejoinGame() {
         $this->sendStartInfo($this->_game->playerInfo);
+        $this->sendHand();
     }
 
 }
