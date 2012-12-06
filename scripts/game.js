@@ -44,9 +44,17 @@ var SevenWonders = function(socket, args){
     for (i = 0; i < args.rightcards.length; i++)
         this.updateColumn('right', args.rightcards[i].color,
                           this.cardImageFromName(args.rightcards[i].name));
+    for (i = 0; i < args.played.length; i++) {
+        var div = this.cardDiv(0, args.played[i]);
+        $('#game').prepend(div);
+        this.moveToBoard(div, false);
+    }
 }
 
 SevenWonders.prototype = {
+    cardWidth: 123,
+    cardHeight: 190,
+
     send: function(opts, type){
         opts = (typeof opts == "object" && !(opts instanceof Array)) ? opts : {value: opts};
         opts.messageType = type;
@@ -122,6 +130,44 @@ SevenWonders.prototype = {
         img.animate({opacity: 1}, 200);
     },
 
+    moveToBoard: function(card, animate) {
+        card.addClass('played').attr('id', '');
+        if (this.trashing) {
+            this.trashing = false;
+            card.animate({
+                left: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
+                bottom: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
+                opacity: 0
+            }, 500, function(){ $(this).remove(); });
+            return;
+        }
+
+        var infoPos = $('#wonder').position();
+        var cardColor = card.data('cardInfo').color;
+        var index = this.colorOrder.indexOf(cardColor);
+        var numInColor = 0;
+        for(i in this.cardsPlayed)
+            if(this.cardsPlayed[i].data('cardInfo').color == cardColor) numInColor++;
+
+        card.find('.options, h1').css('display', 'none');
+        card.css('z-index', 100 - numInColor);
+        var opts = {
+            left: infoPos.left - 400 + index * 135,
+            bottom: $('#game').height() - infoPos.top - 155 + numInColor * 40 - (cardColor == 'blue' ? 93 : 0),
+            width: this.cardWidth,
+            height: this.cardHeight,
+            opacity: 1
+        };
+
+        if (animate)
+            card.animate(opts);
+        else
+            card.css(opts);
+
+        this.cardsPlayed.push(card);
+        card.removeClass('highlighted').removeClass('selected');
+    },
+
     onMessage: function(args, msg){
         switch(args.messageType){
             case 'hand':
@@ -135,45 +181,12 @@ SevenWonders.prototype = {
                 });
 
                 var self = this;
-                var cardWidth = 123;
-                var cardHeight = 190;
-                function moveToBoard(card){
-                    if(self.trashing){
-                        this.trashing = false;
-                        card.animate({
-                            left: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
-                            bottom: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
-                            opacity: 0
-                        }, 500, function(){ $(this).remove(); });
-                    } else {
-                        var infoPos = $('#wonder').position();
-                        var cardColor = card.data('cardInfo').color;
-                        var index = self.colorOrder.indexOf(cardColor);
-                        var numInColor = 0;
-                        for(i in self.cardsPlayed)
-                            if(self.cardsPlayed[i].data('cardInfo').color == cardColor) numInColor++;
-
-                        card.find('.options, h1').css('display', 'none');
-                        card.css('z-index', 100 - numInColor);
-                        card.animate({
-                            left: infoPos.left - 400 + index * 135,
-                            bottom: $('#game').height() - infoPos.top - 155 + numInColor * 40 - (cardColor == 'blue' ? 93 : 0),
-                            width: cardWidth,
-                            height: cardHeight,
-                            opacity: 1
-                        })
-
-                        self.cardsPlayed.push(card);
-                        card.removeClass('highlighted').removeClass('selected');
-                    }
-                }
 
                 // move selected card to board for later reference
                 var selected = $('.card.highlighted');
                 if(selected.length){
-                    selected.addClass('played').attr('id', '');
                     selected.rotate({animateTo: 0});
-                    moveToBoard(selected);
+                    this.moveToBoard(selected, true);
                 }
 
                 // animate selected to board
@@ -181,18 +194,8 @@ SevenWonders.prototype = {
                 var count = args.cards.length;
                 for(i in args.cards){
                     var card = args.cards[i];
-                    var div = $('<div class="card" id="card' + count + '" style="background: #' + this.colorOrder[card.color] + ';">\
-                        <h1>' + card.name + '</h1>\
-                        ' + this.cardImageFromName(args.cards[i].name) + '\
-                        <div class="options">\
-                            <a href="#" class="trash">Trash</a>\
-                            <a href="#" class="play">Play</a>\
-                            <a href="#" class="wonder">Wonder</a>\
-                            <a href="#" class="undo">Undo</a>\
-                        </div>\
-                    </div>');
+                    var div = this.cardDiv(count, card);
                     $('#game').prepend(div);
-                    div.data('cardInfo', card);
                     count--;
                 }
 
@@ -241,20 +244,20 @@ SevenWonders.prototype = {
                     if($(this).is(':animated') || $(this).hasClass('ignore')) return;
                     if($(this).hasClass('selected')){
                         $(this).css('z-index', 1);
-                        $(this).animate({ width: cardWidth, height: cardHeight, left: '+=25px', bottom: '+=38px' }, 200);
+                        $(this).animate({ width: self.cardWidth, height: self.cardHeight, left: '+=25px', bottom: '+=38px' }, 200);
                         $(this).removeClass('selected');
                         $('.card:not(.ignore)').animate({ opacity: 1 }, 200);
                         $('.options').css('display', 'none');
                     } else {
                         $('.card.selected').css('z-index', 1);
-                        $('.card.selected').animate({width: cardWidth, height: cardHeight, left: '+=25px', bottom: '+=38px'}, 200);
+                        $('.card.selected').animate({width: self.cardWidth, height: self.cardHeight, left: '+=25px', bottom: '+=38px'}, 200);
                         $('.card:not(.ignore)').removeClass('selected');
                         $(this).addClass('selected');
                         $('.card:not(.ignore, #' + $(this).attr('id') + ')').animate({ opacity: 0.1 }, 200);
                         $('.options').css('display', 'none');
                         $(this).animate({
-                            width: cardWidth + 50,
-                            height: cardHeight + 76.5,
+                            width: self.cardWidth + 50,
+                            height: self.cardHeight + 76.5,
                             left: '-=25px',
                             bottom: '-=38px',
                             opacity: 1
@@ -370,5 +373,21 @@ SevenWonders.prototype = {
                 console.log(args, msg);
             break;
         }
+    },
+
+    cardDiv: function(idx, card) {
+        var div = $('<div class="card" id="card' + idx +
+                 '" style="background: #' + this.colorOrder[card.color] + ';">'+
+                     '<h1>' + card.name + '</h1>' +
+                     this.cardImageFromName(card.name) +
+                     '<div class="options">' +
+                         '<a href="#" class="trash">Trash</a>' +
+                         '<a href="#" class="play">Play</a>' +
+                         '<a href="#" class="wonder">Wonder</a>' +
+                         '<a href="#" class="undo">Undo</a>' +
+                     '</div>' +
+                 '</div>');
+        div.data('cardInfo', card);
+        return div;
     }
 }

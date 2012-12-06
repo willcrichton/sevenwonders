@@ -179,7 +179,8 @@ class Player {
             "neighbors" => array('left' => $this->leftPlayer->id(),
                                  'right' => $this->rightPlayer->id()),
             'leftcards' => array_map($tojson, $this->leftPlayer->cardsPlayed),
-            'rightcards' => array_map($tojson, $this->rightPlayer->cardsPlayed)
+            'rightcards' => array_map($tojson, $this->rightPlayer->cardsPlayed),
+            'played' => array_map($tojson, $this->cardsPlayed)
         );
         $this->send("startinfo", $startInfo);
     }
