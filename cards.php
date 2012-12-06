@@ -169,11 +169,9 @@ class WonderCard {
                         $args = explode(' ', $this->command);
                         $directions = arrowsToDirection($args[0]);
                         $resources = WonderCard::csvResources($args[1], false);
-                        foreach ($resources as $resource) {
-                            foreach ($directions as $dir) {
+                        foreach ($resources as $resource)
+                            foreach ($directions as $dir)
                                 $user->addDiscount($dir, $resource);
-                            }
-                        }
                     }
                 } elseif($this->getAge() == 2) {
                     // check for yellow non-buyable resources

@@ -28,71 +28,139 @@ class Resource {
         $this->amts[$resource]++;
     }
 
+    public function discount($discounts) {
+        // This isn't exactly optimal, but what we're doing here is that if a
+        // discounted resource appears at least once in our resource, then our
+        // entire resource is discounted. This turns out to always be true
+        // because discounts apply to WOCS or LGP, and no card has both of those
+        // types of resources (thankfully)
+        foreach ($discounts as $resource)
+            foreach ($resource->amts as $type => $amt)
+                if ($amt > 0 && $this->amts[$type] > 0)
+                    return 1;
+        return 2;
+    }
+
     public static function one($res) {
         $ret = new Resource(false, false);
         $ret->add($res);
         return $ret;
     }
 
-    public static function satisfiable($cost, $have) {
-        return count(self::satisfy($cost, $have)) == 0;
+    public static function satisfiable($want, $have) {
+        $have = array_map(function($r) { return ResourceOption::me($r); },
+                          $have);
+
+        // print_r($want);
+        // echo "\n";
+        // print_r($have);
+        // echo "\n";
+        $ret = self::satisfy($want, $have);
+        // print_r($ret);
+        // echo "\n";
+        foreach ($ret as $dir) {
+            $good = true;
+            foreach ($dir as $amt) {
+                if ($amt > 0) {
+                    $good = false;
+                    break;
+                }
+            }
+            if ($good)
+                return true;
+        }
+        return false;
     }
 
-    public static function satisfy($cost, $have) {
+    public static function satisfy($want, $have) {
         $total = array(self::STONE => 0, self::WOOD => 0, self::ORE => 0,
                        self::CLAY => 0, self::LINEN => 0, self::GLASS => 0,
                        self::PAPER => 0);
-        foreach ($cost as $resource) {
+        foreach ($want as $resource) {
             foreach ($resource->amts as $res => $amt) {
                 $total[$res] += $amt;
             }
         }
 
         $ret = array();
-        self::tryuse($have, $total, $ret);
+        self::tryuse(array('left' => 0, 'right' => 0, 'self' => 0),
+                     $have, $total, $ret);
         return $ret;
     }
 
-    private static function tryuse($resources, $costs, &$ret) {
+    private static function tryuse($costs, $available, &$want, &$ret) {
         $allZero = true;
-        foreach ($costs as $amount) {
+        foreach ($want as $amount) {
             if ($amount > 0) {
                 $allZero = false;
                 break;
             }
         }
         if ($allZero) {
-            $ret = array();
-            return true;
-        }
-        if (count($resources) == 0) {
             $ret[] = $costs;
-            return false;
+            return;
         }
+        if (count($available) == 0)
+            return;
 
-        $resource = array_pop($resources);
+        $option = array_pop($available);
+        $resource = $option->resource;
+        $costs[$option->direction] += $option->cost;
+
         if ($resource->only_one) {
             // If we can only use one of these resources, try each one
             // individually and see if we can satisfy
-            $tried = false;
             foreach ($resource->amts as $type => $amt) {
-                if ($costs[$type] <= 0) continue;
-                $tried = true;
-                $costs[$type] -= $amt;
-                if (self::tryuse($resources, $costs, $ret)) return true;
-                $costs[$type] += $amt;
+                if ($want[$type] <= 0)
+                    continue;
+                $want[$type] -= $amt;
+                self::tryuse($costs, $available, $want, $ret);
+                $want[$type] += $amt;
             }
-            // Otherwise try just not using this resource
-            return $tried ? false : self::tryuse($resources, $costs, $ret);
+        } else {
+            // If we can use this multi-resource, then use as much of it as
+            // possible and then move on to using another resource.
+            foreach ($resource->amts as $type => $amt)
+                $want[$type] -= $amt;
+            self::tryuse($costs, $available, $want, $ret);
+            foreach ($resource->amts as $type => $amt)
+                $want[$type] += $amt;
         }
 
-        // If we can use this multi-resource, then use as much of it as possible
-        // and then move on to using another resource.
-        foreach ($resource->amts as $type => $amt) {
-            if ($costs[$type] > 0) $costs[$type] -= $amt;
-        }
+        $costs[$option->direction] -= $option->cost;
 
-        return self::tryuse($resources, $costs, $ret);
+        // Try not using this resource
+        self::tryuse($costs, $available, $want, $ret);
+    }
+}
+
+class ResourceOption {
+    public $resource;
+    public $direction;
+    public $cost;
+
+    public static function left(Resource $resource, $cost = 1) {
+        $ret = new ResourceOption();
+        $ret->cost = $cost;
+        $ret->direction = 'left';
+        $ret->resource = $resource;
+        return $ret;
+    }
+
+    public static function right(Resource $resource, $cost = 1) {
+        $ret = new ResourceOption();
+        $ret->cost = $cost;
+        $ret->direction = 'right';
+        $ret->resource = $resource;
+        return $ret;
+    }
+
+    public static function me(Resource $resource) {
+        $ret = new ResourceOption();
+        $ret->cost = 0;
+        $ret->direction = 'self';
+        $ret->resource = $resource;
+        return $ret;
     }
 }
 

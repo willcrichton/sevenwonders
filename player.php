@@ -28,6 +28,10 @@ class Player {
     public $rightPlayer;
     public $discounts;
 
+    // Figuring out card costs
+    private $_lastCostCard;
+    private $_lastCost;
+
     public function __construct($id, $unique) {
         $this->_name = "Guest $unique";
         $this->_id = $id;
@@ -190,4 +194,47 @@ class Player {
         $this->sendHand();
     }
 
+    public function findCost(WonderCard $card) {
+        $required = $card->getResourceCost();
+        $have = array();
+        // We get all our resources for free
+        foreach ($this->permResources as $resource)
+            $have[] = ResourceOption::me($resource);
+        // Add in all the left player's resources, factoring in discounts
+        foreach ($this->leftPlayer->permResources as $resource) {
+            if (!$resource->buyable())
+                continue;
+            $have[] = ResourceOption::left($resource,
+                            $resource->discount($this->discounts['left']));
+        }
+        // Add in all the right player's resources, factoring discounts
+        foreach ($this->rightPlayer->permResources as $resource) {
+            if (!$resource->buyable())
+                continue;
+            $have[] = ResourceOption::right($resource,
+                            $resource->discount($this->discounts['right']));
+        }
+
+        // Figure out how we can pay neighbors to satisfy our requirements
+        $possible = Resource::satisfy($required, $have);
+
+        // Filter out all things we can't actually pay for
+        for ($i = 0; $i < count($possible); $i++) {
+            $total = 0;
+            foreach ($possible[$i] as $dir => $cost)
+                $total += $cost;
+            if ($total > $this->coins - $card->getMoneyCost()) {
+                array_splice($possible, $i, 1);
+                $i--;
+            }
+        }
+
+        // Save off what we just calculated so we can verify a cost strategy
+        // when one is provided when playing the card
+        $this->_lastCostCard = $card;
+        $this->_lastCost = $possible;
+
+        // Send off everything we just found
+        $this->send('possibilities', array('combs' => $possible));
+    }
 }

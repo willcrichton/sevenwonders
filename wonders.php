@@ -240,59 +240,6 @@ class SevenWonders {
                 unset($this->cardsChosen[$user->id()]);
                 break;
 
-            case 'trade':
-                $this->log("{$user->info()} is trading");
-                $leftTotal = 0;
-
-                $leftFilter = array_filter($user->leftPlayer->permResources, function($var){ return $var->buyable; });
-                if(!$user->leftPlayer->checkResourceCost($args['left'], $leftFilter)){
-                    $user->sendError("Left player doesn't have those resources");
-                    return;
-                }
-                /* TODO: change this */
-                foreach($args['left'] as $resource => $amount){
-                    $discount = isset($user->discounts['left'][$resource]) ? $user->discounts['left'][$resource] : 0;
-                    $leftTotal += max((2 - $discount) * $amount, 0);
-                }
-
-                $rightTotal = 0;
-                $rightFilter = array_filter($user->rightPlayer->permResources, function($var){ return $var->buyable; });
-                if(!$user->leftPlayer->checkResourceCost($args['right'], $rightFilter	)){
-                    $user->sendError("Right player doesn't have those resources");
-                    return;
-                }
-                foreach($args['right'] as $resource => $amount){
-                    $discount = isset($user->discounts['right'][$resource]) ? $user->discounts['right'][$resource] : 0;
-                    $rightTotal += max((2 - $discount) * $amount, 0);
-                }
-
-                $total = $leftTotal + $rightTotal;
-                // factor in yellow cards into total cost here
-                if($total > $user->coins){
-                    $user->sendError("You don't have enough money to buy those resources");
-                    return;
-                }
-
-                $user->addCoins(-1 * $total);
-                if($leftTotal > 0)
-                    $this->tradeQueue[] = array('player' => $user->leftPlayer, 'coins' => $leftTotal);
-                if($rightTotal > 0)
-                    $this->tradeQueue[] = array('player' => $user->rightPlayer, 'coins' => $rightTotal);
-                // give left/right neighbors coins accordingly
-                foreach(array('left', 'right') as $side){
-                    foreach($args[$side] as $resource => $amount){
-                        for($i = 0; $i < $amount; $i++){
-                            $res = new Resource();
-                            $res->buyable = false;
-                            $res->resources = $resource;
-                            $user->tempResources[] = $res;
-                        }
-                    }
-                }
-
-                $user->send('bought', array('resources' => $user->tempResources));
-                break;
-
             case 'checkresources':
                 $cardName = $args['value'];
                 foreach($user->hand as $card)
@@ -301,8 +248,7 @@ class SevenWonders {
                 if(!isset($toPlay))
                     return;
 
-                // TODO: this is wrong now
-                // $user->send('resourcesneeded', $user->missingCost($toPlay));
+                $user->findCost($toPlay);
                 break;
 
             default:
