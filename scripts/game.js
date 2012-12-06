@@ -36,6 +36,7 @@ var SevenWonders = function(socket, args){
         self.send(info, 'trade')
     });
     this.updateCoins();
+    this.updateMilitary(args.military);
 }
 
 SevenWonders.prototype = {
@@ -66,6 +67,23 @@ SevenWonders.prototype = {
             var img = $('<img src="images/coin3.png" class="gold" />');
             img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
             $('#coins').append(img);
+        }
+    },
+
+    updateMilitary: function(args) {
+        console.log(args);
+        $('#military').html('');
+        var points = {1 : 'victory1', 3: 'victory3', 5: 'victory5' };
+        points[-1] = 'victoryminus1';
+        for(var i in points){
+            var n = args[i];
+            for(var j = 0; j < n; j++){
+                var img = $('<img src="images/' + points[i] + '.png" />');
+                img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
+                var rot = (Math.random() - 0.5) * 100;
+                $('#military').append(img);
+            }
+            if(n > 0) $('#military').append('<br />');
         }
     },
 
@@ -315,21 +333,8 @@ SevenWonders.prototype = {
             break;
 
             case 'military':
-                console.log(args);
-                $('#military').html('');
-                var points = {1 : 'victory1', 3: 'victory3', 5: 'victory5' };
-                points[-1] = 'victoryminus1';
-                for(var i in points){
-                    var n = args[i];
-                    for(var j = 0; j < n; j++){
-                        var img = $('<img src="images/' + points[i] + '.png" />');
-                        img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
-                        var rot = (Math.random() - 0.5) * 100;
-                        $('#military').append(img);
-                    }
-                    if(n > 0) $('#military').append('<br />');
-                }
-            break;
+                this.updateMilitary(args);
+                break;
 
             case 'bought':
                 $('#resourceSelect').animate({height: $('#resources').height(), bottom: 5}, 500);

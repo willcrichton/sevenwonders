@@ -174,6 +174,7 @@ class Player {
             "wonder" => $this->wonder["name"],
             "plinfo" => $playerInfo,
             "resource" => $this->wonder['resource'],
+            "military" => $this->military->json(),
             "neighbors" => array('left' => $this->leftPlayer->id(),
                                  'right' => $this->rightPlayer->id())
         );
