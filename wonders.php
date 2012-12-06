@@ -17,6 +17,7 @@ class SevenWonders {
     public $cardsChosen = array();
     public $tradeQueue = array();
     public $wonders;
+    public $playerInfo;
 
     public function __construct(){
         global $deck;
@@ -107,18 +108,11 @@ class SevenWonders {
                 'order' => $this->players[$i]->order
             );
         }
+        $this->playerInfo = $playerInfo;
 
         // send start information
         foreach($this->players as $player){
-            $startInfo = array(
-                "coins" => $player->coins,
-                "wonder" => $player->wonder["name"],
-                "plinfo" => $playerInfo,
-                "resource" => $player->wonder['resource'],
-                "neighbors" => array('left' => $player->leftPlayer->id(),
-                                     'right' => $player->rightPlayer->id())
-            );
-            $player->send("startinfo", $startInfo);
+            $player->sendStartInfo($playerInfo);
         }
 
         $this->deal();

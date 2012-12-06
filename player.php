@@ -168,4 +168,20 @@ class Player {
                     array('age' => $this->_game->age, 'cards' => $info));
     }
 
+    public function sendStartInfo($playerInfo) {
+        $startInfo = array(
+            "coins" => $this->coins,
+            "wonder" => $this->wonder["name"],
+            "plinfo" => $playerInfo,
+            "resource" => $this->wonder['resource'],
+            "neighbors" => array('left' => $this->leftPlayer->id(),
+                                 'right' => $this->rightPlayer->id())
+        );
+        $this->send("startinfo", $startInfo);
+    }
+
+    public function rejoinGame() {
+        $this->sendStartInfo($this->_game->playerInfo);
+    }
+
 }

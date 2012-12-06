@@ -55,13 +55,18 @@ class WonderServer implements IWebSocketServerObserver{
             $user->send('myname',
                         array('name' => $user->name(),
                               'id'   => $user->id()));
-            foreach($this->games as $game) {
-                if ($game->started)
-                    continue;
-                $user->send('newgame',
-                            array('name' => $game->name,
-                                  'creator' => $game->creator->name,
-                                  'id' => $game->id));
+
+            if ($user->game() != null) {
+                $user->rejoinGame();
+            } else {
+                foreach($this->games as $game) {
+                    if ($game->started)
+                        continue;
+                    $user->send('newgame',
+                                array('name' => $game->name,
+                                      'creator' => $game->creator->name,
+                                      'id' => $game->id));
+                }
             }
 
             $this->say("{$user->id()} connected");
@@ -131,12 +136,8 @@ class WonderServer implements IWebSocketServerObserver{
         if (!isset($this->conns[$conn->getId()]))
             return;
         $user = $this->conns[$conn->getId()];
-        $this->say("{$user->id()} disconnected");
-        foreach($this->games as $game) {
-            if(in_array($user, $game->players))
-                $game->removePlayer($user);
-        }
         unset($this->conns[$conn->getId()]);
+        $this->say("{$user->id()} disconnected");
     }
 
     public function onAdminMessage(IWebSocketConnection $conn,
