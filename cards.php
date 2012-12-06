@@ -252,7 +252,7 @@ class WonderCard {
             }
             return $sum;
         }
-        if (!$card->isGuild() || $card->getName() == "Scientists Guild")
+        if (!$this->isGuild() || $this->getName() == "Scientists Guild")
             return 0;
 
         $args = explode(' ', $this->command);
