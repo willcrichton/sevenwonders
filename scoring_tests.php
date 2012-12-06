@@ -15,6 +15,24 @@ function test($f) {
     if (!$f) throw new Exception("bad");
 }
 
+function satisfiable($want, $have) {
+    $have = array_map(function($r) { return ResourceOption::me($r); },
+                      $have);
+    $ret = Resource::satisfy($want, $have);
+    foreach ($ret as $dir) {
+        $good = true;
+        foreach ($dir as $amt) {
+            if ($amt > 0) {
+                $good = false;
+                break;
+            }
+        }
+        if ($good)
+            return true;
+    }
+    return false;
+}
+
 // Resource satisfiability
 $clay2 = res(Resource::CLAY, 2, false);
 $clay = res(Resource::CLAY, 1, false);
@@ -27,15 +45,15 @@ $caravan->add(Resource::CLAY);
 $caravan->add(Resource::ORE);
 $caravan->add(Resource::WOOD);
 $caravan->add(Resource::STONE);
-test(Resource::satisfiable(array($clay), array($clay2)));
-test(Resource::satisfiable(array($clay), array($caravan)));
-test(!Resource::satisfiable(array($clay, $wood), array($caravan)));
-test(Resource::satisfiable(array($clay, $wood), array($caravan, $wood)));
-test(Resource::satisfiable(array($clay, $wood), array($caravan, $clay)));
-test(Resource::satisfiable(array($clay, $wood), array($wood, $caravan)));
-test(Resource::satisfiable(array($clay, $wood), array($clay, $caravan)));
-test(!Resource::satisfiable(array($clay, $wood), array($clay2)));
-test(!Resource::satisfiable(array($clay, $wood), array($ore)));
+test(satisfiable(array($clay), array($clay2)));
+test(satisfiable(array($clay), array($caravan)));
+test(!satisfiable(array($clay, $wood), array($caravan)));
+test(satisfiable(array($clay, $wood), array($caravan, $wood)));
+test(satisfiable(array($clay, $wood), array($caravan, $clay)));
+test(satisfiable(array($clay, $wood), array($wood, $caravan)));
+test(satisfiable(array($clay, $wood), array($clay, $caravan)));
+test(!satisfiable(array($clay, $wood), array($clay2)));
+test(!satisfiable(array($clay, $wood), array($ore)));
 
 $caravan0 = ResourceOption::me($caravan);
 $caravanl = ResourceOption::left($caravan);
@@ -99,16 +117,16 @@ testcard(',,brown,yard,TT,,,1,2,2,2,2', 1, function($player) {
     test($player->permResources[0]->buyable());
     test($player->permResources[1]->buyable());
     global $wood;
-    test(Resource::satisfiable(array($wood, $wood), $player->permResources));
+    test(satisfiable(array($wood, $wood), $player->permResources));
 });
 // Playing a brown one-resource should add one resources
 testcard(',,brown,yard,S/T,,,1,2,2,2,2', 1, function($player) {
     test(count($player->permResources) == 1);
     test($player->permResources[0]->buyable());
     global $wood, $stone;
-    test(Resource::satisfiable(array($wood), $player->permResources));
-    test(Resource::satisfiable(array($stone), $player->permResources));
-    test(!Resource::satisfiable(array($stone, $wood), $player->permResources));
+    test(satisfiable(array($wood), $player->permResources));
+    test(satisfiable(array($stone), $player->permResources));
+    test(!satisfiable(array($stone, $wood), $player->permResources));
 });
 
 // Point cards should just add points
@@ -133,8 +151,8 @@ testcard(',,yellow,yard,< WO,,,1,2,2,2,2', 1, function($player) {
 testcard(',,yellow,yard,G/P/L,,,1,2,2,2,2', 2, function($player) {
     test(count($player->permResources) == 1);
     global $linen;
-    test(Resource::satisfiable(array($linen), $player->permResources));
-    test(!Resource::satisfiable(array($linen, $linen), $player->permResources));
+    test(satisfiable(array($linen), $player->permResources));
+    test(!satisfiable(array($linen, $linen), $player->permResources));
 });
 // second-age yellow coin-gain card
 testcard(',,brown,yard,G,,,1,2,2,2,2', 2, function($player) {

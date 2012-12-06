@@ -12,11 +12,11 @@ class Player {
     // Game state
     public $coins;
     public $permResources;
-    public $tempResources;
     public $wonder;
     public $order;
     public $hand;
     public $selectedCard;
+    public $pendingCost;        // cost of $selectedCard
     public $cardsPlayed;
     public $military;
     public $militaryPoints;
@@ -59,7 +59,6 @@ class Player {
         $this->_game = $game;
         $this->coins = 0;
         $this->permResources = array();
-        $this->tempResources = array();
         $this->wonder = null;
         $this->order = -1;
         $this->hand = null;
@@ -91,31 +90,6 @@ class Player {
         $this->conn->sendString(json_encode($msg));
     }
 
-    public function canPlayCard(WonderCard $card){
-        // check for duplicates
-        foreach ($this->cardsPlayed as $cardPlayed) {
-            if ($cardPlayed->getName() == $card->getName())
-                return "You've already played this card";
-        }
-
-        // check if it's a prerequisite for being free
-        foreach ($this->cardsPlayed as $cardPlayed)
-            if ($cardPlayed->getName() == $card->getPrereq())
-                return '';
-
-        // check if player has enough money
-        if ($card->getMoneyCost() > $this->coins)
-            return "You don't have enough coins";
-
-        // check if player has necessary resources
-        $cost = $card->getResourceCost();
-        $availableResources = array_merge($this->permResources, $this->tempResources);
-        if (!Resource::satisfiable($cost, $availableResources))
-            return "You don't have enough resources";
-
-        return '';
-    }
-
     public function canSellResource($resource){
         if(!isset($this->permResources[$resource])) return false;
         return isset($this->permResources[$resource]['buy']);
@@ -126,6 +100,8 @@ class Player {
     }
 
     public function addCoins($coins){
+        if ($coins == 0)
+            return;
         $this->coins += $coins;
         $this->send('coins', $this->coins);
     }
@@ -195,8 +171,32 @@ class Player {
     }
 
     public function findCost(WonderCard $card) {
+        $possibilities = $this->calculateCost($card);
+
+        // Save off what we just calculated so we can verify a cost strategy
+        // when one is provided when playing the card
+        $this->_lastCostCard = $card;
+        $this->_lastCost = $possibilities;
+
+        // Send off everything we just found
+        $this->send('possibilities', array('combs' => $possibilities));
+    }
+
+    private function calculateCost(WonderCard $card) {
+        // check for duplicates
+        foreach ($this->cardsPlayed as $cardPlayed)
+            if ($cardPlayed->getName() == $card->getName())
+                return array();
+
+        // check if it's a prerequisite for being free
+        foreach ($this->cardsPlayed as $cardPlayed)
+            if ($cardPlayed->getName() == $card->getPrereq())
+                return array(array());
+
+        // Otherwise, we're going to have to pay for this card somehow
         $required = $card->getResourceCost();
         $have = array();
+
         // We get all our resources for free
         foreach ($this->permResources as $resource)
             $have[] = ResourceOption::me($resource);
@@ -228,13 +228,21 @@ class Player {
                 $i--;
             }
         }
+        return $possible;
+    }
 
-        // Save off what we just calculated so we can verify a cost strategy
-        // when one is provided when playing the card
-        $this->_lastCostCard = $card;
-        $this->_lastCost = $possible;
+    public function cardCost(WonderCard $card, $selection){
+        // Make sure we've pre-calculated the cost of this card and that the
+        // specified selection is in bounds
+        if (!isset($this->_lastCost) || !isset($this->_lastCost[$selection]) ||
+            $this->_lastCostCard->getName() != $card->getName())
+            return false;
 
-        // Send off everything we just found
-        $this->send('possibilities', array('combs' => $possible));
+        $ret = $this->_lastCost[$selection];
+
+        unset($this->_lastCost);
+        unset($this->_lastCostCard);
+
+        return $ret;
     }
 }

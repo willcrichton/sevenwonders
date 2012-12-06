@@ -47,31 +47,6 @@ class Resource {
         return $ret;
     }
 
-    public static function satisfiable($want, $have) {
-        $have = array_map(function($r) { return ResourceOption::me($r); },
-                          $have);
-
-        // print_r($want);
-        // echo "\n";
-        // print_r($have);
-        // echo "\n";
-        $ret = self::satisfy($want, $have);
-        // print_r($ret);
-        // echo "\n";
-        foreach ($ret as $dir) {
-            $good = true;
-            foreach ($dir as $amt) {
-                if ($amt > 0) {
-                    $good = false;
-                    break;
-                }
-            }
-            if ($good)
-                return true;
-        }
-        return false;
-    }
-
     public static function satisfy($want, $have) {
         $total = array(self::STONE => 0, self::WOOD => 0, self::ORE => 0,
                        self::CLAY => 0, self::LINEN => 0, self::GLASS => 0,

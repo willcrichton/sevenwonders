@@ -15,7 +15,6 @@ class SevenWonders {
     public $age = 1;
     public $turn = 1;
     public $cardsChosen = array();
-    public $tradeQueue = array();
     public $wonders;
     public $playerInfo;
 
@@ -156,6 +155,7 @@ class SevenWonders {
             if (!$player->rightPlayer->isTrashing)
                 $data['right'] = $player->rightPlayer->selectedCard->json();
             $player->send('cardschosen', $data);
+
             $card = $player->selectedCard;
             if ($player->isTrashing) {
                 $this->log("{$player->info()} trashing " . $card->getName());
@@ -166,18 +166,24 @@ class SevenWonders {
                 $this->log("{$player->info()}) playing " . $card->getName());
                 $card->play($player);
                 $player->cardsPlayed[] = $card;
+
+                // Consume money cost for this player and pay adjacent players
+                $player->addCoins(-1 * $card->getMoneyCost());
+                foreach ($player->pendingCost as $dir => $cost) {
+                    if ($dir == 'left')
+                        $player->leftPlayer->addCoins($cost);
+                    else if ($dir == 'right')
+                        $player->rightPlayer->addCoins($cost);
+                    $player->addCoins(-1 * $cost);
+                }
             }
             unset($player->hand[array_search($card, $player->hand)]);
-            $player->tempResources = array();
         }
 
-        foreach ($this->players as $player)
+        foreach ($this->players as $player) {
             unset($player->selectedCard);
-
-        foreach($this->tradeQueue as $trade){
-            $trade['player']->addCoins($trade['coins']);
+            unset($player->pendingCost);
         }
-        $this->tradeQueue = array();
 
         $this->cardsChosen = array();
         if ($this->turn == 6) {
@@ -216,13 +222,14 @@ class SevenWonders {
                     break;
                 if ($args['value'][1] == 'trash') {
                     $user->isTrashing = true;
+                    unset($user->pendingCost);
                 } else {
-                    $err = $user->canPlayCard($foundCard);
-                    if ($err != '') {
-                        $user->sendError($err);
+                    // TODO: this '0' should be an input from the message
+                    $cost = $user->cardCost($foundCard, 0);
+                    if ($cost === false)
                         break;
-                    }
                     $user->isTrashing = false;
+                    $user->pendingCost = $cost;
                 }
                 $this->log("{$user->info()} chose {$foundCard->getName()}");
                 $this->cardsChosen[$user->id()] = $foundCard;
@@ -237,6 +244,7 @@ class SevenWonders {
             case 'cardignore':
                 $user->isTrashing = false;
                 unset($user->selectedCard);
+                unset($user->pendingCost);
                 unset($this->cardsChosen[$user->id()]);
                 break;
 
