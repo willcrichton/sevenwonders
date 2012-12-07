@@ -60,10 +60,10 @@ class SevenWonders {
 
     public function addPlayer(Player $user){
         foreach($this->players as $player){
-            $player->send('newplayer', array('id' => $user->getId(),
-                                             'name' => $user->getName()));
-            $user->send('newplayer', array('id' => $player->getId(),
-                                           'name' => $player->getName()));
+            $player->send('newplayer', array('id' => $user->id(),
+                                             'name' => $user->name()));
+            $user->send('newplayer', array('id' => $player->id(),
+                                           'name' => $player->name()));
         }
 
         if(count($this->players) == 0)

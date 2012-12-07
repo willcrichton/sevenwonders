@@ -64,7 +64,7 @@ class WonderServer implements IWebSocketServerObserver{
                         continue;
                     $user->send('newgame',
                                 array('name' => $game->name,
-                                      'creator' => $game->creator->name,
+                                      'creator' => $game->creator->name(),
                                       'id' => $game->id));
                 }
             }
