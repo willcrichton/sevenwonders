@@ -18,7 +18,7 @@ function test($f) {
 function satisfiable($want, $have) {
     $have = array_map(function($r) { return ResourceOption::me($r); },
                       $have);
-    $ret = Resource::satisfy($want, $have);
+    $ret = Resource::satisfy($want, $have, 100);
     foreach ($ret as $dir) {
         $good = true;
         foreach ($dir as $amt) {
@@ -57,17 +57,17 @@ test(!satisfiable(array($clay, $wood), array($ore)));
 
 $caravan0 = ResourceOption::me($caravan);
 $caravanl = ResourceOption::left($caravan);
-test(count(Resource::satisfy(array($clay), array())) == 0);
-test(count(Resource::satisfy(array($clay), array($caravan0))) == 1);
-test(count(Resource::satisfy(array($clay, $stone), array($caravan0))) == 0);
+test(count(Resource::satisfy(array($clay), array(), 10)) == 0);
+test(count(Resource::satisfy(array($clay), array($caravan0), 10)) == 1);
+test(count(Resource::satisfy(array($clay, $stone), array($caravan0), 10)) == 0);
 
-$ret = Resource::satisfy(array($clay), array($caravanl));
+$ret = Resource::satisfy(array($clay), array($caravanl), 100);
 test(count($ret) == 1);
 test($ret[0]['left'] == 1);
 test($ret[0]['right'] == 0);
 test($ret[0]['self'] == 0);
 
-$ret = Resource::satisfy(array($clay), array($caravan0, $caravanl));
+$ret = Resource::satisfy(array($clay), array($caravan0, $caravanl), 10);
 test(count($ret) == 2);
 test($ret[0]['left'] == 1);
 test($ret[0]['right'] == 0);

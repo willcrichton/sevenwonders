@@ -47,7 +47,7 @@ class Resource {
         return $ret;
     }
 
-    public static function satisfy($want, $have) {
+    public static function satisfy($want, $have, $maxcost) {
         $total = array(self::STONE => 0, self::WOOD => 0, self::ORE => 0,
                        self::CLAY => 0, self::LINEN => 0, self::GLASS => 0,
                        self::PAPER => 0);
@@ -59,11 +59,13 @@ class Resource {
 
         $ret = array();
         self::tryuse(array('left' => 0, 'right' => 0, 'self' => 0),
-                     $have, $total, $ret);
+                     $have, $total, $ret, $maxcost);
         return $ret;
     }
 
-    private static function tryuse($costs, $available, &$want, &$ret) {
+    private static function tryuse($costs, $available, &$want, &$ret, $money) {
+        if ($money < 0)
+            return;
         $allZero = true;
         foreach ($want as $amount) {
             if ($amount > 0) {
@@ -81,6 +83,7 @@ class Resource {
         $option = array_pop($available);
         $resource = $option->resource;
         $costs[$option->direction] += $option->cost;
+        $money -= $option->cost;
 
         if ($resource->only_one) {
             // If we can only use one of these resources, try each one
@@ -89,7 +92,7 @@ class Resource {
                 if ($want[$type] <= 0)
                     continue;
                 $want[$type] -= $amt;
-                self::tryuse($costs, $available, $want, $ret);
+                self::tryuse($costs, $available, $want, $ret, $money);
                 $want[$type] += $amt;
             }
         } else {
@@ -97,7 +100,7 @@ class Resource {
             // possible and then move on to using another resource.
             foreach ($resource->amts as $type => $amt)
                 $want[$type] -= $amt;
-            self::tryuse($costs, $available, $want, $ret);
+            self::tryuse($costs, $available, $want, $ret, $money);
             foreach ($resource->amts as $type => $amt)
                 $want[$type] += $amt;
         }
@@ -105,7 +108,7 @@ class Resource {
         $costs[$option->direction] -= $option->cost;
 
         // Try not using this resource
-        self::tryuse($costs, $available, $want, $ret);
+        self::tryuse($costs, $available, $want, $ret, $money);
     }
 }
 

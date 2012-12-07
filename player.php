@@ -224,18 +224,8 @@ class Player {
         }
 
         // Figure out how we can pay neighbors to satisfy our requirements
-        $possible = Resource::satisfy($required, $have);
-
-        // Filter out all things we can't actually pay for
-        for ($i = 0; $i < count($possible); $i++) {
-            $total = 0;
-            foreach ($possible[$i] as $dir => $cost)
-                $total += $cost;
-            if ($total > $this->coins - $card->getMoneyCost()) {
-                array_splice($possible, $i, 1);
-                $i--;
-            }
-        }
+        $possible = Resource::satisfy($required, $have,
+                                      $this->coins - $card->getMoneyCost());
         return $possible;
     }
 
