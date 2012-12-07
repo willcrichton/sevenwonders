@@ -110,7 +110,7 @@ class Resource {
             // If we can only use one of these resources, try each one
             // individually and see if we can satisfy
             foreach ($resource->amts as $type => $amt) {
-                if ($want[$type] <= 0)
+                if ($want[$type] <= 0 || $amt == 0)
                     continue;
                 $used = true;
                 $want[$type] -= $amt;
