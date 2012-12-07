@@ -49,7 +49,6 @@
                         break;
 
                     case 'newplayer':
-                        players.push(args);
                         $('#waiting ul').append('<li>' + args.name + '</li>');
                         break;
 
@@ -67,6 +66,13 @@
                         $("#game" + args.id).css('display', 'none');
                         break;
 
+                    case 'joingame':
+                        waitScreen();
+                        for (var i = 0; i < args.players.length; i++)
+                            $('#waiting ul').append(
+                                '<li>' + args.players[i] + '</li>');
+                        break;
+
                     default:
                         if(game != undefined)
                             game.onMessage(args, msg.data);
@@ -79,7 +85,6 @@
             var socket;
             var my_id = localStorage.sevenwonders_id || '';
             var my_name = "Guest";
-            var players = [];
             var status = "lobby";
             var game = undefined;
             $(document).ready(function(){
@@ -109,7 +114,7 @@
                     return false;
                 }
                 var opts = { name: form.game_name.value,
-                             players: form.players.value};
+                             players: form.players.value };
                 send(opts, "newgame");
                 waitScreen();
 

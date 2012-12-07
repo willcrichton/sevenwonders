@@ -57,7 +57,10 @@ class WonderServer implements IWebSocketServerObserver{
                               'id'   => $user->id()));
 
             if ($user->game() != null) {
-                $user->rejoinGame();
+                if ($user->game()->started)
+                    $user->rejoinGame();
+                else
+                    $user->rejoinWaitingRoom();
             } else {
                 foreach($this->games as $game) {
                     if ($game->started)
@@ -104,16 +107,12 @@ class WonderServer implements IWebSocketServerObserver{
                 break;
 
             case 'joingame':
-                if ($user->game() == null) {
-                    $id = $arr['id'];
-                    if(isset($this->games[$id]) && !$this->games[$id]->started){
-                        $this->games[$id]->addPlayer($user);
-                    } else {
-                        // error game not exist/game already started
-                    }
-                } else {
-                    // error already in game
-                }
+                if ($user->game() != null)
+                    break;
+                $id = $arr['id'];
+                if (!isset($this->games[$id]) || $this->games[$id]->started)
+                    break;
+                $this->games[$id]->addPlayer($user);
                 break;
 
             case 'changename':

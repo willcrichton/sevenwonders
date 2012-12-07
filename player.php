@@ -170,6 +170,15 @@ class Player {
         $this->sendHand();
     }
 
+    public function rejoinWaitingRoom() {
+        $players = array();
+        foreach ($this->game()->players as $player) {
+            if ($player != $this)
+                $players[] = $player->name();
+        }
+        $this->send('joingame', array('players' => $players));
+    }
+
     public function findCost(WonderCard $card) {
         $possibilities = $this->calculateCost($card);
 
