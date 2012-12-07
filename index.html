@@ -41,8 +41,10 @@
 
                     case 'newgame':
                         if(status == "lobby"){
-                            $('#opengames').append('<li class="light" id="game' + args.id + '"><a href="#" onclick="return joinGame(' + args.id + ')">' + args.name + ' - ' + args.creator +
-                                '</a></li>');
+                            $('#opengames').append('<li class="light" id="game'+
+                            args.id + '"><a href="#" onclick="return ' +
+                            "joinGame('" + args.id + "')\">" + args.name +
+                            ' - ' + args.creator + '</a></li>');
                         }
                         break;
 
