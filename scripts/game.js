@@ -185,7 +185,8 @@ SevenWonders.prototype = {
                 // move selected card to board for later reference
                 var selected = $('.card.highlighted');
                 if(selected.length){
-                    selected.rotate({animateTo: 0});
+                    // TODO: animate this rotation (animateTo doesn't work)
+                    selected.rotate(0);
                     this.moveToBoard(selected, true);
                 }
 
