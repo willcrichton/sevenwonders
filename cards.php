@@ -231,8 +231,8 @@ class WonderCard {
         if ($this->age != 3)
             return 0;
         if ($this->color == 'yellow') {
-            $mult = $card->thirdAgeYellowPoints();
-            $color = $card->thirdAgeYellowColor();
+            $mult = $this->thirdAgeYellowPoints();
+            $color = $this->thirdAgeYellowColor();
             $sum = 0;
             if($color == 'wonder'){
                 // TODO: check for wonders here
