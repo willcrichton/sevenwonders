@@ -146,12 +146,6 @@ class WonderCard {
     }
 
     function play(Player $user){
-        if($this->moneyCost != 0)
-            $user->addCoins(-1 * $this->moneyCost);
-
-        // calculate resources/buying from neighbors here
-        // include temp resources
-
         switch($this->color){
             case 'red':
                 $user->military->add(intval($this->command));
