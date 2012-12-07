@@ -108,7 +108,6 @@ class Player {
 
     public function addResource(Resource $resource, $buyable = true) {
         $this->permResources[] = $resource;
-        $this->send('resources', array('resources' => $this->permResources));
     }
 
     public function evaluateMilitary($age){

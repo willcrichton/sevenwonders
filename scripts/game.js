@@ -330,12 +330,6 @@ SevenWonders.prototype = {
                 this.updateCoins();
                 break;
 
-            case 'resources':
-                var resources = args.resources;
-                console.log(resources);
-                // do things here?
-            break;
-
             case 'military':
                 this.updateMilitary(args);
                 break;
