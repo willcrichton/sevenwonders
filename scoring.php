@@ -56,16 +56,27 @@ class Resource {
                 $total[$res] += $amt;
             }
         }
+        // Try to consume low cost resources first so we can prune out all of
+        // the very costly resource combinations early on (if possible)
+        usort($have, function($a, $b) { return $a->cost - $b->cost; });
 
         $ret = array();
         self::tryuse(array('left' => 0, 'right' => 0, 'self' => 0),
-                     $have, $total, $ret, $maxcost);
+                     $have, $total, $ret, $maxcost, 100);
         return $ret;
     }
 
-    private static function tryuse($costs, $available, &$want, &$ret, $money) {
+    private static function tryuse($costs, $available, &$want, &$ret,
+                                   $money, $minsofar) {
+        // If we ran out of money, then we're done
         if ($money < 0)
-            return;
+            return 100;
+
+        // If someone got this resource for free, then there's no use to go any
+        // farther
+        if ($minsofar == 0)
+            return 100;
+
         $allZero = true;
         foreach ($want as $amount) {
             if ($amount > 0) {
@@ -74,41 +85,67 @@ class Resource {
             }
         }
         if ($allZero) {
-            $ret[] = $costs;
-            return;
+            $sum = array_sum($costs);
+            // Don't add ridiculous combinations where an absurd amount of money
+            // is spent when very little could be spent
+            if ($sum < $minsofar + 2) {
+                // Make sure we don't add duplicates to the array
+                if (array_search($costs, $ret) === false)
+                    $ret[] = $costs;
+            }
+            return min($minsofar, $sum);
         }
-        if (count($available) == 0)
-            return;
 
-        $option = array_pop($available);
+        // If we ran out of resources, then we're done
+        if (count($available) == 0)
+            return 100;
+
+        $option = array_shift($available);
         $resource = $option->resource;
         $costs[$option->direction] += $option->cost;
         $money -= $option->cost;
 
+        $used = false;
         if ($resource->only_one) {
             // If we can only use one of these resources, try each one
             // individually and see if we can satisfy
             foreach ($resource->amts as $type => $amt) {
                 if ($want[$type] <= 0)
                     continue;
+                $used = true;
                 $want[$type] -= $amt;
-                self::tryuse($costs, $available, $want, $ret, $money);
+                $rec = self::tryuse($costs, $available, $want, $ret, $money,
+                                    $minsofar);
                 $want[$type] += $amt;
+                $minsofar = min($rec, $minsofar);
             }
         } else {
             // If we can use this multi-resource, then use as much of it as
             // possible and then move on to using another resource.
-            foreach ($resource->amts as $type => $amt)
+            foreach ($resource->amts as $type => $amt) {
+                if ($want[$type] > 0)
+                    $used = true;
                 $want[$type] -= $amt;
-            self::tryuse($costs, $available, $want, $ret, $money);
+            }
+            if ($used) {
+                $rec = self::tryuse($costs, $available, $want, $ret, $money,
+                                    $minsofar);
+            }
             foreach ($resource->amts as $type => $amt)
                 $want[$type] += $amt;
+            $minsofar = min($rec, $minsofar);
         }
 
         $costs[$option->direction] -= $option->cost;
+        $money += $option->cost;
 
-        // Try not using this resource
-        self::tryuse($costs, $available, $want, $ret, $money);
+        // Try not using this resource if we didn't already.
+        if (!$used || $option->cost > 0) {
+            $rec = self::tryuse($costs, $available, $want, $ret, $money,
+                                $minsofar);
+            return min($rec, $minsofar);
+        }
+        return $minsofar;
     }
 }
 

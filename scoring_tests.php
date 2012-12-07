@@ -45,6 +45,9 @@ $caravan->add(Resource::CLAY);
 $caravan->add(Resource::ORE);
 $caravan->add(Resource::WOOD);
 $caravan->add(Resource::STONE);
+$stonebrick = new Resource(true, false);
+$stonebrick->add(Resource::CLAY);
+$stonebrick->add(Resource::STONE);
 test(satisfiable(array($clay), array($clay2)));
 test(satisfiable(array($clay), array($caravan)));
 test(!satisfiable(array($clay, $wood), array($caravan)));
@@ -57,6 +60,7 @@ test(!satisfiable(array($clay, $wood), array($ore)));
 
 $caravan0 = ResourceOption::me($caravan);
 $caravanl = ResourceOption::left($caravan);
+$caravanr = ResourceOption::right($caravan);
 test(count(Resource::satisfy(array($clay), array(), 10)) == 0);
 test(count(Resource::satisfy(array($clay), array($caravan0), 10)) == 1);
 test(count(Resource::satisfy(array($clay, $stone), array($caravan0), 10)) == 0);
@@ -68,13 +72,18 @@ test($ret[0]['right'] == 0);
 test($ret[0]['self'] == 0);
 
 $ret = Resource::satisfy(array($clay), array($caravan0, $caravanl), 10);
-test(count($ret) == 2);
-test($ret[0]['left'] == 1);
+test(count($ret) == 1);
+test($ret[0]['left'] == 0);
 test($ret[0]['right'] == 0);
 test($ret[0]['self'] == 0);
-test($ret[1]['left'] == 0);
-test($ret[1]['right'] == 0);
-test($ret[1]['self'] == 0);
+
+$ret = Resource::satisfy(array($clay), array($caravanr, $caravanl), 10);
+test(count($ret) == 2);
+
+$ret = Resource::satisfy(array($clay),
+                         array(ResourceOption::left($clay),
+                               ResourceOption::right($clay)), 10);
+test(count($ret) == 2);
 
 // Test science scoring
 $s1 = new Science();
