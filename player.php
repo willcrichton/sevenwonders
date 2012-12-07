@@ -106,7 +106,7 @@ class Player {
         $this->send('coins', $this->coins);
     }
 
-    public function addResource(Resource $resource, $buyable = true) {
+    public function addResource(Resource $resource) {
         $this->permResources[] = $resource;
     }
 

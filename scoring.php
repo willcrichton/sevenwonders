@@ -42,7 +42,7 @@ class Resource {
     }
 
     public static function one($res) {
-        $ret = new Resource(false, false);
+        $ret = new Resource(false, true);
         $ret->add($res);
         return $ret;
     }

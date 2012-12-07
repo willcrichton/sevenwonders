@@ -90,7 +90,7 @@ class SevenWonders {
             // select a wonder
             $wonder = $this->wonders[array_pop($wonderKeys)];
             $player->wonder = $wonder;
-            $player->addResource($wonder['resource'], 1);
+            $player->addResource($wonder['resource']);
         }
 
         // shuffle order of players
