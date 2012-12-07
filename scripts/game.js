@@ -137,7 +137,7 @@ SevenWonders.prototype = {
             card.animate({
                 left: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
                 bottom: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
-                opacity: 0
+                opacity: 0,
             }, 500, function(){ $(this).remove(); });
             return;
         }
@@ -156,7 +156,8 @@ SevenWonders.prototype = {
             bottom: $('#game').height() - infoPos.top - 155 + numInColor * 40 - (cardColor == 'blue' ? 93 : 0),
             width: this.cardWidth,
             height: this.cardHeight,
-            opacity: 1
+            opacity: 1,
+            rotate: 0
         };
 
         if (animate)
@@ -186,7 +187,6 @@ SevenWonders.prototype = {
                 var selected = $('.card.highlighted');
                 if(selected.length){
                     // TODO: animate this rotation (animateTo doesn't work)
-                    selected.rotate(0);
                     this.moveToBoard(selected, true);
                 }
 
@@ -218,11 +218,10 @@ SevenWonders.prototype = {
                     if($(this).hasClass('ignore')) return;
                     var deg = (cardIndex(this) + 0.5 - numCards / 2) * 8;
                     $(this).css({
-                        '-webkit-transform': 'rotate(' + deg + 'deg)',
-                        '-moz-transform': 'rotate(' + deg + 'deg)',
                         'left': $('#wonder').position().left - 75,
                         'bottom': -200
                     });
+                    $(this).rotate(deg);
                     $(this).data('rotation', deg);
                 })
 
@@ -245,13 +244,27 @@ SevenWonders.prototype = {
                     if($(this).is(':animated') || $(this).hasClass('ignore')) return;
                     if($(this).hasClass('selected')){
                         $(this).css('z-index', 1);
-                        $(this).animate({ width: self.cardWidth, height: self.cardHeight, left: '+=25px', bottom: '+=38px' }, 200);
+                        $(this).animate({
+                            width: self.cardWidth, 
+                            height: self.cardHeight, 
+                            left: '+=25px', 
+                            bottom: '+=38px',
+                            rotate: $(this).data('rotation')
+                        }, 200);
                         $(this).removeClass('selected');
                         $('.card:not(.ignore)').animate({ opacity: 1 }, 200);
                         $('.options').css('display', 'none');
                     } else {
                         $('.card.selected').css('z-index', 1);
-                        $('.card.selected').animate({width: self.cardWidth, height: self.cardHeight, left: '+=25px', bottom: '+=38px'}, 200);
+                        $('.card.selected').each(function(){
+                            $(this).animate({
+                                width: self.cardWidth, 
+                                height: self.cardHeight, 
+                                left: '+=25px', 
+                                bottom: '+=38px',
+                                rotate: $(this).data('rotation')
+                            }, 200);
+                        });
                         $('.card:not(.ignore)').removeClass('selected');
                         $(this).addClass('selected');
                         $('.card:not(.ignore, #' + $(this).attr('id') + ')').animate({ opacity: 0.1 }, 200);
@@ -261,7 +274,8 @@ SevenWonders.prototype = {
                             height: self.cardHeight + 76.5,
                             left: '-=25px',
                             bottom: '-=38px',
-                            opacity: 1
+                            opacity: 1,
+                            rotate: 0
                         }, 200, function(){
                             $(this).find('.options').fadeIn(200);
                             $(this).css('z-index', 2);
