@@ -55,7 +55,7 @@ class SevenWonders {
 
     public function log($msg){
         if($this->debug)
-            echo "Game " . $this->id . " (turn " . $this->turn . ", age " . $this->age . "): $msg\n";
+            echo "Game {$this->id} (turn {$this->turn}, age {$this->age}): $msg\n";
     }
 
     public function addPlayer(Player $user){
@@ -134,14 +134,16 @@ class SevenWonders {
     }
 
     public function rotateHands($moveLeft){
-        $player = $this->players[0];
-        $tempHand = $player->hand;
+        $neighbor = $this->players[0];
+        $last = $neighbor->hand;
         do {
-            $neighbor = $moveLeft ? $player->rightPlayer : $player->leftPlayer;
-            $player->hand = $neighbor == $player ? $tempHand : $neighbor->hand;
+            $player = $moveLeft ? $neighbor->leftPlayer : $neighbor->rightPlayer;
+            $tmp = $last;
+            $last = $player->hand;
+            $player->hand = $tmp;
             $player->sendHand();
-            $player = $neighbor;
-        } while($player != $this->players[0]);
+            $neighbor = $player;
+        } while($neighbor != $this->players[0]);
     }
 
     private function playCards() {
