@@ -214,7 +214,7 @@ class WonderCard {
 
             case 'purple':
                 if ($this->getName() == 'Scientists Guild') {
-                    $user->addScience(Science::ANY);
+                    $user->science->add(Science::ANY);
                 }
                 // none of these give coins or anything, so don't need to check
                 // until the end
