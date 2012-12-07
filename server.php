@@ -94,7 +94,7 @@ class WonderServer implements IWebSocketServerObserver{
                 $game->server = $this;
                 $game->addPlayer($user);
 
-                $this->games[] = $game;
+                $this->games[$game->id] = $game;
 
                 if ($game->maxplayers > 1)
                     $this->broadcast('newgame',
@@ -104,8 +104,8 @@ class WonderServer implements IWebSocketServerObserver{
                 break;
 
             case 'joingame':
-                if(!isset($user->game)){
-                    $id = intval($arr['id']);
+                if ($user->game() == null) {
+                    $id = $arr['id'];
                     if(isset($this->games[$id]) && !$this->games[$id]->started){
                         $this->games[$id]->addPlayer($user);
                     } else {
