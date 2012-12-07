@@ -107,6 +107,32 @@ $ret = Resource::satisfy(
 );
 test(count($ret) == 2);
 
+$wo = new Resource(true, false);
+$wo->add(Resource::WOOD);
+$wo->add(Resource::ORE);
+$wb = new Resource(true, false);
+$wb->add(Resource::CLAY);
+$wb->add(Resource::WOOD);
+$ret = Resource::satisfy(
+    array($clay, $clay, $linen),
+    array(
+        ResourceOption::me($paper),
+        ResourceOption::me($linen),
+        ResourceOption::me($wo),
+        ResourceOption::me($wb),
+        ResourceOption::left($paper, 2),
+        ResourceOption::left($linen, 2),
+        ResourceOption::left($wo, 2),
+        ResourceOption::left($wb, 2),
+        ResourceOption::right($paper, 2),
+        ResourceOption::right($linen, 2),
+        ResourceOption::right($wo, 2),
+        ResourceOption::right($wb, 2),
+    ),
+    100
+);
+test(count($ret) == 2);
+
 // Test science scoring
 $s1 = new Science();
 test($s1->points() == 0);
