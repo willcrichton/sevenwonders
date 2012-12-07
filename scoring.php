@@ -123,17 +123,17 @@ class Resource {
             // If we can use this multi-resource, then use as much of it as
             // possible and then move on to using another resource.
             foreach ($resource->amts as $type => $amt) {
-                if ($want[$type] > 0)
+                if ($want[$type] > 0 && $amt > 0)
                     $used = true;
                 $want[$type] -= $amt;
             }
             if ($used) {
                 $rec = self::tryuse($costs, $available, $want, $ret, $money,
                                     $minsofar);
+                $minsofar = min($rec, $minsofar);
             }
             foreach ($resource->amts as $type => $amt)
                 $want[$type] += $amt;
-            $minsofar = min($rec, $minsofar);
         }
 
         $costs[$option->direction] -= $option->cost;

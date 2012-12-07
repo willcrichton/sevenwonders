@@ -40,6 +40,8 @@ $stone = res(Resource::STONE, 1, false);
 $ore = res(Resource::ORE, 1, false);
 $wood = res(Resource::WOOD, 1, false);
 $linen = res(Resource::LINEN, 1, false);
+$paper = res(Resource::PAPER, 1, false);
+$glass = res(Resource::GLASS, 1, false);
 $caravan = new Resource(true, false);
 $caravan->add(Resource::CLAY);
 $caravan->add(Resource::ORE);
@@ -83,6 +85,26 @@ test(count($ret) == 2);
 $ret = Resource::satisfy(array($clay),
                          array(ResourceOption::left($clay),
                                ResourceOption::right($clay)), 10);
+test(count($ret) == 2);
+
+$ret = Resource::satisfy(
+    array($stone, $stone, $ore),
+    array(
+        ResourceOption::me($stone),
+        ResourceOption::me($ore),
+        ResourceOption::me($glass),
+        ResourceOption::me($paper),
+        ResourceOption::left($stone, 2),
+        ResourceOption::left($ore, 2),
+        ResourceOption::left($glass, 2),
+        ResourceOption::left($paper, 2),
+        ResourceOption::right($stone, 2),
+        ResourceOption::right($ore, 2),
+        ResourceOption::right($glass, 2),
+        ResourceOption::right($paper, 2),
+    ),
+    100
+);
 test(count($ret) == 2);
 
 // Test science scoring
