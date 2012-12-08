@@ -58,7 +58,24 @@ class Resource {
         }
         // Try to consume low cost resources first so we can prune out all of
         // the very costly resource combinations early on (if possible)
-        usort($have, function($a, $b) { return $a->cost - $b->cost; });
+        usort($have, function($a, $b) {
+            // First off, prefer cheaper resources to find the cheapest solution
+            // first.
+            if ($a->cost != $b->cost)
+                return $a->cost - $b->cost;
+
+            // Next, prefer not only_one resources because they may force us to
+            // make some form of decision multiple times.
+            if ($a->resource->only_one != $b->resource->only_one) {
+                if ($a->resource->only_one)
+                    return 1; // prefer $b
+                return -1;    // prefer $a
+            }
+
+            // Finally, prefer simpler resources first
+            return array_sum($a->resource->amts) -
+                   array_sum($b->resource->amts);
+        });
 
         $ret = array();
         self::tryuse(array('left' => 0, 'right' => 0, 'self' => 0),
