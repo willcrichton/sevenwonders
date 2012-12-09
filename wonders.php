@@ -21,36 +21,30 @@ class SevenWonders {
     public function __construct(){
         global $deck;
         $this->deck = $deck;
-        $this->wonders = array(
-            array(
-                "name" => "Olympia",
-                "resource" => Resource::one(Resource::WOOD)
-            ),
-            array(
-                "name" => "Rhodos",
-                "resource" => Resource::one(Resource::ORE)
-            ),
-            array(
-                "name" => "Alexandria",
-                "resource" => Resource::one(Resource::GLASS)
-            ),
-            array(
-                "name" => "Ephesos",
-                "resource" => Resource::one(Resource::PAPER)
-            ),
-            array(
-                "name" => "Halikarnassus",
-                "resource" => Resource::one(Resource::LINEN)
-            ),
-            array(
-                "name" => "Gizah",
-                "resource" => Resource::one(Resource::STONE)
-            ),
-            array(
-                "name" => "Babylon",
-                "resource" => Resource::one(Resource::CLAY)
-            )
-        );
+        $this->wonders = $this->loadWonders();
+    }
+
+    private function loadWonders() {
+        $wonders = json_decode(file_get_contents("cards/wonders.json"), true);
+        foreach ($wonders as &$wonder) {
+            foreach ($wonder as $side => &$value) {
+                if ($side == 'name')
+                    continue;
+
+                if (isset($value['resource']))
+                    $value['resource'] =
+                        WonderCard::csvResources($value['resource'], false)[0];
+
+                foreach ($value['stages'] as &$stage) {
+                    if (isset($stage['resource']))
+                        $stage['resource'] =
+                            WonderCard::csvResources($stage['resource'], false)[0];
+                    $stage['requirements'] =
+                        WonderCard::csvResources($stage['requirements'], false);
+                }
+            }
+        }
+        return $wonders;
     }
 
     public function log($msg){
@@ -89,8 +83,10 @@ class SevenWonders {
 
             // select a wonder
             $wonder = $this->wonders[array_pop($wonderKeys)];
-            $player->wonder = $wonder;
-            $player->addResource($wonder['resource']);
+            $player->wonderName = $wonder['name'];
+            $player->wonder = $wonder['a']; // TODO: not here
+            if (isset($wonder['resource']))
+                $player->addResource($wonder['resource']);
         }
 
         // shuffle order of players

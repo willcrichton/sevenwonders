@@ -42,7 +42,7 @@ class WonderCard {
         return $numplayers;
     }
 
-    static function csvResources($str, $buyable){
+    public static function csvResources($str, $buyable){
         $resources = array(
             'S' => Resource::STONE,
             'T' => Resource::WOOD,

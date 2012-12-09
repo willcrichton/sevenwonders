@@ -13,6 +13,7 @@ class Player {
     public $coins;
     public $permResources;
     public $wonder;
+    public $wonderName;
     public $order;
     public $hand;
     public $selectedCard;
@@ -149,11 +150,13 @@ class Player {
 
     public function sendStartInfo($playerInfo) {
         $tojson = function($a) { return $a->json(); };
+        $wonderInfo = array("name" => $this->wonderName);
+        if (isset($this->wonder['resource']))
+            $wonderInfo['resource'] = $this->wonder['resource']->json();
         $startInfo = array(
             "coins" => $this->coins,
-            "wonder" => $this->wonder["name"],
+            "wonder" => $wonderInfo,
             "plinfo" => $playerInfo,
-            "resource" => $this->wonder['resource'],
             "military" => $this->military->json(),
             "neighbors" => array('left' => $this->leftPlayer->id(),
                                  'right' => $this->rightPlayer->id()),

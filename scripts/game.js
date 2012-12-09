@@ -13,7 +13,7 @@ var SevenWonders = function(socket, args){
 
     // select wonder image here (load in appropriately)
     // TODO: let player choose wonder side
-    $('#wonder').css('background', 'url(images/wonders/' + this.wonder.toLowerCase() + 'A.png) no-repeat center center');
+    $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + 'A.png) no-repeat center center');
 
     var panelOut = false;
     $('#resources a').click(function(){
