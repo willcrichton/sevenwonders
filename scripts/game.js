@@ -12,7 +12,7 @@ var SevenWonders = function(socket, args){
 
     // select wonder image here (load in appropriately)
     // TODO: let player choose wonder side
-    $('#wonder').css('background', 'url(images/' + this.wonder.toLowerCase() + 'A.png) no-repeat center center');
+    $('#wonder').css('background', 'url(images/wonders/' + this.wonder.toLowerCase() + 'A.png) no-repeat center center');
 
     var panelOut = false;
     $('#resources a').click(function(){
@@ -62,7 +62,7 @@ SevenWonders.prototype = {
     },
 
     cardImageFromName: function(name){
-        return '<img src="images/' + name.toLowerCase().replace(/ /g, "") + '.png" />';
+        return '<img src="images/cards/' + name.toLowerCase().replace(/ /g, "") + '.png" />';
     },
 
     updateCoins: function() {
@@ -71,7 +71,7 @@ SevenWonders.prototype = {
         $('#coins').html('');
         for(var i = 0; i < silvers; i++){
             var rot = (Math.random() - 0.5) * 300;
-            var img = $('<img src="images/coin1.png" class="silver" />');
+            var img = $('<img src="images/tokens/coin1.png" class="silver" />');
             img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
             $('#coins').append(img);
         }
@@ -79,7 +79,7 @@ SevenWonders.prototype = {
 
         for(var i = 0; i < golds; i++){
             var rot = (Math.random() - 0.5) * 300;
-            var img = $('<img src="images/coin3.png" class="gold" />');
+            var img = $('<img src="images/tokens/coin3.png" class="gold" />');
             img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
             $('#coins').append(img);
         }
@@ -87,12 +87,12 @@ SevenWonders.prototype = {
 
     updateMilitary: function(args) {
         $('#military').html('');
-        var points = {1 : 'victory1', 3: 'victory3', 5: 'victory5' };
+        var points = {1 : 'victory1', 3: 'victory3', 5: 'victory5'};
         points[-1] = 'victoryminus1';
         for(var i in points){
             var n = args[i];
             for(var j = 0; j < n; j++){
-                var img = $('<img src="images/' + points[i] + '.png" />');
+                var img = $('<img src="images/tokens/' + points[i] + '.png" />');
                 img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
                 var rot = (Math.random() - 0.5) * 100;
                 $('#military').append(img);
@@ -169,6 +169,36 @@ SevenWonders.prototype = {
         card.removeClass('highlighted').removeClass('selected');
     },
 
+    cardDiv: function(idx, card) {
+        var div = $('<div class="card" id="card' + idx +
+                 '" style="background: #' + this.colorOrder[card.color] + ';">'+
+                     '<h1>' + card.name + '</h1>' +
+                     this.cardImageFromName(card.name) +
+                     '<div class="options">\
+                         <a href="#" class="trash"></a>\
+                         <a href="#" class="play"></a>\
+                         <a href="#" class="wonder"></a>\
+                     </div>\
+                     <div class="slider"><h2>Play Cost</h2>\
+                            <div class="left"></div>\
+                            <input type="range" min="0" value="0"/>\
+                            <div class="right"></div>\
+                    </div>\
+                 </div>');
+        div.data('cardInfo', card);
+        return div;
+    },
+
+    resetHighlight: function(){
+        var old = $('.highlighted');
+        if(old.length > 0){
+            old.removeClass('highlighted');
+            old.find('.options a').css('visibility', 'visible')
+                                  .animate({opacity: 1}, 200);
+            old.find('.play').css('background-image: url(images/tokens/card.png)');
+        }
+    },
+
     onMessage: function(args, msg){
         switch(args.messageType){
             case 'hand':
@@ -232,7 +262,7 @@ SevenWonders.prototype = {
                         $(this).animate({
                             'bottom': '+=' + ((Math.pow(index + 0.5 - numCards / 2, 2) * -8) + 665),
                             'left': '+=' + (index + 0.5 - numCards / 2) * 120
-                        }, 2000, 'easeOutExpo', function(){
+                        }, 1500, 'easeOutExpo', function(){
                             $('#game').css("overflow", "auto");
                         });
                     });
@@ -264,11 +294,11 @@ SevenWonders.prototype = {
                                 bottom: '+=38px',
                                 rotate: $(this).data('rotation')
                             }, 200);
+                            $(this).find('.options').css('display', 'none');
                         });
                         $('.card:not(.ignore)').removeClass('selected');
                         $(this).addClass('selected');
                         $('.card:not(.ignore, #' + $(this).attr('id') + ')').animate({ opacity: 0.1 }, 200);
-                        $('.options').css('display', 'none');
                         $(this).animate({
                             width: self.cardWidth + 50,
                             height: self.cardHeight + 76.5,
@@ -280,13 +310,10 @@ SevenWonders.prototype = {
                             $(this).find('.options').fadeIn(200);
                             $(this).css('z-index', 2);
                         });
-
-                        self.send({value: $(this).find('h1').html()}, 'checkresources');
                     }
                 });
 
                 function chooseCard(card, playtype){
-                    $('.card:not(.ignore)').removeClass('highlighted');
                     card.addClass('highlighted');
                     self.send([card.find('h1').html(), playtype], 'cardplay');
                 }
@@ -294,29 +321,34 @@ SevenWonders.prototype = {
                 $('.trash').click(function(e){
                     e.stopPropagation()
                     var card = $(this).parent().parent();
-                    chooseCard(card, 'trash');
+                    self.resetHighlight();
+
+                    card.addClass('highlighted');
+                    self.send([card.find('h1').html(), 'trash'], 'cardplay');
                     self.trashing = true;
+                    
+                    card.find('.options a:not(.play)').animate({opacity: 0}, 200)
+                                                      .css('visibility', 'hidden');
+                    card.find('.options .play').css('background-image', 'url(images/tokens/no.png');
+
                     return false;
                 });
 
                 $('.play').click(function(e){
                     e.stopPropagation()
                     var card = $(this).parent().parent();
-                    chooseCard(card, 'play');
+                    if(card.hasClass('highlighted')){
+                        console.log(card, this);
+                        $(this).animate({opacity: 0}, 200, function(){
+                            $(this).css('background-image', 'url(images/tokens/card.png)');
+                            card.find('.options a').css('visibility', 'visible').animate({ opacity: 1 }, 200);
+                        });
+                        self.send('', 'cardignore');
+                        card.removeClass('highlighted');
+                    } else {
+                        self.send({value: card.find('h1').html()}, 'checkresources');
+                    }
                     self.trashing = false;
-                    return false;
-                });
-
-                $('.undo').click(function(e){
-                    e.stopPropagation();
-                    var card = $(this).parent().parent();
-                    card.removeClass('highlighted');
-                    self.send('', 'cardignore');
-                    self.trashing = false;
-                    card.find('.undo').animate({ opacity: 0 }, 200, function(){
-                        $(this).css('display', 'none');
-                        card.find('.options a:not(.undo)').css('display', 'block').animate({ opacity: 1 }, 200);
-                    });
                     return false;
                 });
 
@@ -325,9 +357,12 @@ SevenWonders.prototype = {
             case 'canplay':
                 var card = $('.highlighted');
                 card.find('.options a').animate({ opacity: 0 }, 200, function(){
-                    if(!card.find('.undo').is(':visible')){
-                        card.find('.undo').css('display', 'block').animate({opacity: 1}, 200);
-                    }
+                    if($(this).hasClass('play')){
+                        $(this).css('background-image', 'url(images/tokens/no.png)')
+                               .animate({opacity: 1}, 200);
+                    } else {
+                        $(this).css('visibility', 'hidden');
+                    }                
                 });
             break;
 
@@ -349,20 +384,11 @@ SevenWonders.prototype = {
                 this.updateMilitary(args);
                 break;
 
-            case 'bought':
-                $('#resourceSelect').animate({height: $('#resources').height(), bottom: 5}, 500);
-                $('#current').html();
-                for(var resource in args.resources){
-                    var amt = args.resources[resource];
-                    $('#current').append(resource + ': ' + amt + '<br />');
-                }
-            break;
-
-            case 'error':
-                // todo: more fancy alerts
-                if($('.card.selected').length){
-                    var card = $('.card.selected');
-                    card.append('<div class="overlay"><h2>Error</h2>' + args.data + '</div>');
+            case 'possibilities':
+                console.log(args.combs);
+                var card = $('.card.selected');
+                if(!args.combs[0]){
+                    card.append('<div class="overlay"><h2>Error</h2>It\'s impossible to play this card</div>');
                     card.find('.overlay').animate({ opacity: '0.9' }, 200);
                     card.find('img').animate({opacity: '0.3'}, 200);
                     var removeErr = function(card){
@@ -373,6 +399,73 @@ SevenWonders.prototype = {
                     }
                     card.find('.overlay').click(function(e){ e.stopPropagation(); removeErr(card); })
                     setTimeout(function(){ removeErr(card) }, 2000);
+                } else {
+                    var minCost = 100;
+                    for(var i in args.combs){
+                        var combo = args.combs[i]; 
+                        var cost = combo.left + combo.right;
+                        if(cost < minCost) minCost = cost;
+                    }
+                    if(minCost == 0){
+                        this.resetHighlight();
+                        $('.card:not(.ignore)').removeClass('highlighted');
+                        card.addClass('highlighted');
+                        this.send([card.find('h1').html(), 'play', 0], 'cardplay');
+                    } else {
+                        var combos = [];
+                        for(var i in args.combs){
+                            var combo = args.combs[i];
+                            var cost = combo.left + combo.right;
+                            if(cost <= minCost + 1){
+                                combos.push(combo);
+                            }
+                            combo.index = i;
+                        }
+                        combos.sort(function(a, b){ return a.left < b.left });
+                        var firstMin = 0;
+                        for(var i = 0; i < combos.length; i++){
+                            if(combos[i].left + combos[i].right == minCost){
+                                firstMin = i; break;
+                            }
+                        }
+
+                        $('.card.selected .options a:not(.play)').animate({opacity: 0}, 200);
+                        $('.card.selected .slider .left').html(combos[firstMin].left);
+                        $('.card.selected .slider .right').html(combos[firstMin].right);
+                        $('.card.selected .slider input[type=range]').attr('max', combos.length - 1)
+                                                                     .attr('value', firstMin);
+                        $('.card.selected .slider').click(function(e){ e.stopPropagation(); })
+                            .css({'height': '0', display: 'block'})
+                            .animate({
+                                height: 55
+                            }, 200);
+                        $('.card.selected input[type=range]').change(function(){
+                            var val = $(this).attr('value');
+                            $('.card.selected .slider .left').html(combos[val].left);
+                            $('.card.selected .slider .right').html(combos[val].right);
+                        });
+
+                        var self = this;
+                        $('.card.selected .play').css('background-image', 'url(images/tokens/buy.png)')
+                            .unbind('click')
+                            .click(function(e){
+                                e.stopPropagation();
+                                var combo = combos[$('.card.selected .slider input[type=range]').attr('value')];
+                                self.resetHighlight();
+                                card.addClass('highlighted');
+                                self.send([card.find('h1').html(), 'play', combo.index], 'cardplay');
+                                card.find('.slider').animate({height: 0}, 200, function(){
+                                    $(this).css('display', 'none');
+                                });
+                            });
+                    }
+                }
+                break;
+
+            case 'error':
+                // todo: more fancy alerts
+                if($('.card.selected').length){
+                    
                 }   else {
                     alert(args.data)
                 }
@@ -382,21 +475,5 @@ SevenWonders.prototype = {
                 console.log(args, msg);
             break;
         }
-    },
-
-    cardDiv: function(idx, card) {
-        var div = $('<div class="card" id="card' + idx +
-                 '" style="background: #' + this.colorOrder[card.color] + ';">'+
-                     '<h1>' + card.name + '</h1>' +
-                     this.cardImageFromName(card.name) +
-                     '<div class="options">' +
-                         '<a href="#" class="trash">Trash</a>' +
-                         '<a href="#" class="play">Play</a>' +
-                         '<a href="#" class="wonder">Wonder</a>' +
-                         '<a href="#" class="undo">Undo</a>' +
-                     '</div>' +
-                 '</div>');
-        div.data('cardInfo', card);
-        return div;
     }
 }

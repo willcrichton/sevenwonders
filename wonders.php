@@ -227,7 +227,7 @@ class SevenWonders {
                     unset($user->pendingCost);
                 } else {
                     // TODO: this '0' should be an input from the message
-                    $cost = $user->cardCost($foundCard, 0);
+                    $cost = $user->cardCost($foundCard, $args['value'][2]);
                     if ($cost === false)
                         break;
                     $user->isTrashing = false;
