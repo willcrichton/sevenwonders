@@ -189,13 +189,12 @@ class WonderCard {
                     }
                 } elseif($this->getAge() == 3) {
                     $coins = $this->thirdAgeYellowCoins();
-                    $points = $this->thirdAgeYellowPoints();
                     $color = $this->thirdAgeYellowColor();
                     // Be sure to count this yellow card for coin increase if
                     // we get coins per yellow card.
                     $coinsToGive = ($color == 'yellow' ? $coins : 0);
                     if ($color == 'wonder') {
-                        // TODO: check for wonder construction here
+                        $coinsToGive = $coins * $user->wonderStage;
                     } else {
                         foreach ($user->cardsPlayed as $card) {
                             if($card->getColor() == $color){
@@ -235,7 +234,7 @@ class WonderCard {
             $color = $this->thirdAgeYellowColor();
             $sum = 0;
             if($color == 'wonder'){
-                // TODO: check for wonders here
+                $sum = $player->wonderStage;
             } else {
                 foreach($player->cardsPlayed as $c){
                     if ($c->color == $color)
@@ -261,7 +260,7 @@ class WonderCard {
                     break;
                 // $mult points for each wonder stage built
                 case 'wonder':
-                    // TODO: check for wonder here
+                    $total += $mult * $pl->wonderStage;
                     break;
                 // $mult points for each brown/grey/blue card
                 case 'brown,grey,blue':
