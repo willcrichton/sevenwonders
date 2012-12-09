@@ -159,14 +159,19 @@ class SevenWonders {
                 $this->log("{$player->info()} trashing " . $card->getName());
                 $player->addCoins(3);
                 $player->isTrashing = false;
-            //} elseif($player->isWonderBuilding == true){
+            } elseif ($player->isBuildWonder == true) {
+                $this->log("{$player->info()} wondering " . $card->getName());
+                $player->playWonderStage();
+                $player->isBuildWonder = false;
             } else {
                 $this->log("{$player->info()}) playing " . $card->getName());
                 $card->play($player);
                 $player->cardsPlayed[] = $card;
-
-                // Consume money cost for this player and pay adjacent players
                 $player->addCoins(-1 * $card->getMoneyCost());
+            }
+
+            if (isset($player->pendingCost)) {
+                // Consume money cost for this player and pay adjacent players
                 foreach ($player->pendingCost as $dir => $cost) {
                     if ($dir == 'left')
                         $player->leftPlayer->addCoins($cost);
@@ -175,6 +180,7 @@ class SevenWonders {
                     $player->addCoins(-1 * $cost);
                 }
             }
+
             unset($player->hand[array_search($card, $player->hand)]);
         }
 
@@ -218,15 +224,17 @@ class SevenWonders {
                 }
                 if (!isset($foundCard)) // don't have the specified card
                     break;
+
                 if ($args['value'][1] == 'trash') {
-                    $user->isTrashing = true;
                     unset($user->pendingCost);
+                    $user->isTrashing = true;
+                    $user->isBuildWonder = false;
                 } else {
-                    // TODO: this '0' should be an input from the message
                     $cost = $user->cardCost($foundCard, $args['value'][2]);
                     if ($cost === false)
                         break;
                     $user->isTrashing = false;
+                    $user->isBuildWonder = ($args['value'][1] == 'wonder');
                     $user->pendingCost = $cost;
                 }
                 $this->log("{$user->info()} chose {$foundCard->getName()}");
@@ -254,7 +262,7 @@ class SevenWonders {
                 if(!isset($toPlay))
                     return;
 
-                $user->findCost($toPlay);
+                $user->findCost($toPlay, $args['type']);
                 break;
 
             default:

@@ -337,15 +337,24 @@ SevenWonders.prototype = {
 
                 $('.play').click(function(e){
                     e.stopPropagation()
-                    var card = $(this).parent().parent();
+                    var card = $(this).closest('.card');
                     if(card.hasClass('highlighted')){
                         $(this).animate({opacity: 0}, 200, function(){
                             self.resetHighlight();
                         });
                         self.send('', 'cardignore');
                     } else {
-                        self.send({value: card.find('h1').html()}, 'checkresources');
+                        var opts = {value: card.find('h1').html(), type: 'card'};
+                        self.send(opts, 'checkresources');
                     }
+                    self.trashing = false;
+                    return false;
+                });
+
+                $('.wonder').click(function (e) {
+                    var card = $(this).closest('.card');
+                    var opts = {value: card.find('h1').html(), type: 'wonder'};
+                    self.send(opts, 'checkresources');
                     self.trashing = false;
                     return false;
                 });
