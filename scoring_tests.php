@@ -150,10 +150,13 @@ $s1->add(Science::TABLET);
 test($s1->points() == 26);
 
 // Test playing cards
+function card($csv, $age = 1) {
+    return WonderCard::import($age, str_getcsv($csv))[0];
+}
 function testcard($csv, $age, $callback) {
     $player = new Player('id', 4);
     $player->setGame(null); // initialize game fields
-    $card = WonderCard::import($age, str_getcsv($csv))[0];
+    $card = card($csv, $age);
     $card->play($player);
     $callback($player);
 }
@@ -228,3 +231,9 @@ testcard(',,brown,yard,G,,,1,2,2,2,2', 2, function($player) {
 testcard(',,yellow,yard,(1){1} yellow,,,1,2,2,2,2', 3, function($player) {
     test($player->coins == 1);
 });
+
+$forum = card('East Trading Post,CC,yellow,Forum,L/G/P,Haven,,1,1,1,2,3');
+$east = card(',,yellow,East Trading Post,> CSOW,Forum,,1,1,1,1,2');
+$west = card(',,yellow,West Trading Post,< CSOW,Forum,,1,1,1,1,2');
+test($forum->hasPrereq($east));
+test($forum->hasPrereq($west));

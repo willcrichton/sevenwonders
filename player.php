@@ -204,7 +204,7 @@ class Player {
 
             // check if it's a prerequisite for being free
             foreach ($this->cardsPlayed as $cardPlayed)
-                if ($cardPlayed->getName() == $card->getPrereq())
+                if ($card->hasPrereq($cardPlayed))
                     return array(array());
 
             $required = $card->getResourceCost();

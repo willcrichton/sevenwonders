@@ -126,8 +126,12 @@ class WonderCard {
         return $this->numPlayers;
     }
 
-    function getPrereq(){
-        return $this->freePrereq;
+    function hasPrereq(WonderCard $card) {
+        // Stupid forum actually has two prerequisites
+        if ($this->name == 'Forum')
+            return strstr($card->name, 'Trading Post') !== false;
+
+        return $this->freePrereq == $card->name;
     }
 
     private function thirdAgeYellowPoints() {
