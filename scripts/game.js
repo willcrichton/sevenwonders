@@ -41,10 +41,10 @@ var SevenWonders = function(socket, args){
     var i;
     for (i = 0; i < args.leftcards.length; i++)
         this.updateColumn('left', args.leftcards[i].color,
-                          this.cardImageFromName(args.leftcards[i].name));
+                          this.cardImageFromName(args.leftcards[i].name), 0);
     for (i = 0; i < args.rightcards.length; i++)
         this.updateColumn('right', args.rightcards[i].color,
-                          this.cardImageFromName(args.rightcards[i].name));
+                          this.cardImageFromName(args.rightcards[i].name), 0);
     for (i = 0; i < args.played.length; i++) {
         var div = this.cardDiv(0, args.played[i]);
         $('#game').prepend(div);
@@ -102,7 +102,7 @@ SevenWonders.prototype = {
         }
     },
 
-    updateColumn: function(side, color, img) {
+    updateColumn: function(side, color, img, speed) {
         img = $('<div class="card ignore played">' + img + '</div>');
         var cardsPlayed = side == 'left' ? this.leftPlayed : this.rightPlayed;
         if(cardsPlayed[color] == undefined) cardsPlayed[color] = [];
@@ -122,13 +122,13 @@ SevenWonders.prototype = {
         for(var j = lastIndex + 1; j < this.colorOrder.length; j++){
             for(cIndex in cardsPlayed[this.colorOrder[j]]){
                 var card_move = $(cardsPlayed[this.colorOrder[j]][cIndex]);
-                card_move.animate({bottom: '+=40px'}, 200);
+                card_move.animate({bottom: '+=40px'}, speed);
             }
         }
         img.css('bottom', bottom);
         img.css('z-index', 1000 * (8 - this.colorOrder.indexOf(color)) - length);
         cardsPlayed[color].push(img.get(0));
-        img.animate({opacity: 1}, 200);
+        img.animate({opacity: 1}, speed);
     },
 
     moveToBoard: function(card, animate) {
@@ -367,10 +367,10 @@ SevenWonders.prototype = {
             case 'cardschosen':
                 if (args.left)
                     this.updateColumn('left', args.left.color,
-                                      this.cardImageFromName(args.left.name));
+                                      this.cardImageFromName(args.left.name), 200);
                 if (args.right)
                     this.updateColumn('right', args.right.color,
-                                      this.cardImageFromName(args.right.name));
+                                      this.cardImageFromName(args.right.name), 200);
             break;
 
             case 'coins':
