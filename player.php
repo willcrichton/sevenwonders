@@ -246,4 +246,32 @@ class Player {
 
         return $ret;
     }
+
+    public function playWonderStage($stage) {
+        $stage = $this->wonder['stages'][$stage];
+        // Do all the easy things first
+        if (isset($stage['military']))
+            $this->military->add($stage['military']);
+        if (isset($stage['coins']))
+            $this->addCoins($stage['coins']);
+        if (isset($stage['points']))
+            $this->points += $stage['points'];
+        if (isset($stage['science']))
+            $this->science->add(Science::ANY); // only babylon for now
+        if (isset($stage['resource']))
+            $this->addResource($stage['resource']);
+        if (!isset($stage['custom']))
+            return;
+
+        switch ($stage['custom']) {
+            case '1free':   // olympia's 1 free card per age
+                break;
+            case 'guild':   // olympia's steal a guild at the end of the game
+                break;
+            case 'discard': // halikarnassus's play from the discard pile
+                break;
+            case 'play2':   // babylon's play both cards at the end of a hand
+                break;
+        }
+    }
 }
