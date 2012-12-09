@@ -1,4 +1,5 @@
 var SevenWonders = function(socket, args){
+
     this.wonder = args.wonder;
     this.players = args.plinfo;
     this.coins = parseInt(args.coins);
@@ -294,7 +295,7 @@ SevenWonders.prototype = {
                                 bottom: '+=38px',
                                 rotate: $(this).data('rotation')
                             }, 200);
-                            $(this).find('.options').css('display', 'none');
+                            $(this).find('.options, .slider').css('display', 'none');
                         });
                         $('.card:not(.ignore)').removeClass('selected');
                         $(this).addClass('selected');
@@ -382,7 +383,6 @@ SevenWonders.prototype = {
                 break;
 
             case 'possibilities':
-                console.log(args.combs);
                 var card = $('.card.selected');
                 if(!args.combs[0]){
                     card.append('<div class="overlay"><h2>Error</h2>It\'s impossible to play this card</div>');
@@ -403,7 +403,7 @@ SevenWonders.prototype = {
                         var cost = combo.left + combo.right;
                         if(cost < minCost) minCost = cost;
                     }
-                    if(minCost == 0){
+                    if(minCost == 0 || typeof args.combs[0].left == "undefined"){
                         this.resetHighlight();
                         $('.card:not(.ignore)').removeClass('highlighted');
                         card.addClass('highlighted');

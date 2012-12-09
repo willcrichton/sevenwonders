@@ -422,35 +422,13 @@ h1.disconnect {
 			left: -5px;
 		}
 
-			/*.card .options a {
-				color: white;
-				text-shadow: 0 0 2px rgba(0,0,0,0.8);
-				display: block;
-				float: left;
-				padding: 3px 8px;
-				background: black;
-				text-decoration: none;
-				margin-right: 15px;
-				-webkit-border-radius: 4px;
-				-moz-border-radius: 4px;
-			}
-
-			.card .options a:last-child {
-				margin: 0;
-			}
-
-			.card .options a.undo {
-				display: none;
-				margin-left: 70px;
-			}*/
-
             .card .options a {
                 display: block;
                 float: left;
                 width: 45px;
                 height: 45px;
                 border-radius: 50px;
-                background: rgba(128, 128, 128, 0.2) url(../images/tokens/trash.png) no-repeat center center;
+                background: rgba(196, 187, 172, 0.7) url(../images/tokens/trash.png) no-repeat center center;
                 border: 3px solid #85765A;
                 margin-top: 8px;
                 margin-right: 8px;
