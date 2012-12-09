@@ -371,7 +371,7 @@ h1.disconnect {
             background: #EBDAC0;
             position: absolute;
             bottom: 5px;
-            height: 55px;
+            height: 65px;
             display: none;
             padding: 5px 10px;
             width: 153px;
@@ -384,22 +384,30 @@ h1.disconnect {
                 font: bold 23px 'RomanSD';
                 float: left;
                 margin-top: -6px;
+                background: url(../images/tokens/coin.png) no-repeat center center;
+                width: 24px;
+                height: 35px;
+                padding-left: 11px;
+                text-shadow: 0 1px 2px white;
             }
 
             .card .slider .left {
-                margin-right: 20px;
+                margin-right: 8px;
+                margin-left: -5px;
             }
 
             .card .slider .right {
-                margin-left: 20px;
+                margin-left: 9px;
+                margin-right: -5px;
             }
 
             .card .slider h2 {
                 font-size: 23px;
+                margin-bottom: 5px;
             }
 
             .card .slider input[type=range]{
-                width: 75px;
+                width: 70px;
                 float: left;
                 margin-top: 3px;
             }

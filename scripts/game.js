@@ -195,7 +195,7 @@ SevenWonders.prototype = {
             old.removeClass('highlighted');
             old.find('.options a').css('visibility', 'visible')
                                   .animate({opacity: 1}, 200);
-            old.find('.play').css('background-image: url(images/tokens/card.png)');
+            old.find('.play').css('background-image', 'url(images/tokens/card.png)');
         }
     },
 
@@ -338,13 +338,10 @@ SevenWonders.prototype = {
                     e.stopPropagation()
                     var card = $(this).parent().parent();
                     if(card.hasClass('highlighted')){
-                        console.log(card, this);
                         $(this).animate({opacity: 0}, 200, function(){
-                            $(this).css('background-image', 'url(images/tokens/card.png)');
-                            card.find('.options a').css('visibility', 'visible').animate({ opacity: 1 }, 200);
+                            self.resetHighlight();
                         });
                         self.send('', 'cardignore');
-                        card.removeClass('highlighted');
                     } else {
                         self.send({value: card.find('h1').html()}, 'checkresources');
                     }
@@ -437,7 +434,7 @@ SevenWonders.prototype = {
                         $('.card.selected .slider').click(function(e){ e.stopPropagation(); })
                             .css({'height': '0', display: 'block'})
                             .animate({
-                                height: 55
+                                height: 65
                             }, 200);
                         $('.card.selected input[type=range]').change(function(){
                             var val = $(this).attr('value');
