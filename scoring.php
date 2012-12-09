@@ -36,6 +36,25 @@ class Resource {
         $this->amts[$resource]++;
     }
 
+    public function json() {
+        // Not enough information to rebuild this object, but we just care about
+        // the name for display purposes (for now?)
+        foreach ($this->amts as $type => $amt) {
+            if ($amt == 0)
+                continue;
+            switch ($type) {
+                case self::STONE: return 'stone';
+                case self::WOOD:  return 'wood';
+                case self::ORE:   return 'ore';
+                case self::CLAY:  return 'clay';
+                case self::LINEN: return 'linen';
+                case self::GLASS: return 'glass';
+                case self::PAPER: return 'paper';
+            }
+        }
+        return '<unknown>';
+    }
+
     public function discount($discounts) {
         // This isn't exactly optimal, but what we're doing here is that if a
         // discounted resource appears at least once in our resource, then our
@@ -47,12 +66,6 @@ class Resource {
                 if ($amt > 0 && $this->amts[$type] > 0)
                     return 1;
         return 2;
-    }
-
-    public static function one($res) {
-        $ret = new Resource(false, true);
-        $ret->add($res);
-        return $ret;
     }
 
     public static function satisfy($want, $have, $maxcost) {

@@ -13,6 +13,7 @@ class Player {
     public $coins;
     public $permResources;
     public $wonder;
+    public $wonderName;
     public $order;
     public $hand;
     public $selectedCard;
@@ -27,6 +28,7 @@ class Player {
     public $leftPlayer;
     public $rightPlayer;
     public $discounts;
+    public $wonderStage;
 
     // Figuring out card costs
     private $_lastCostCard;
@@ -69,6 +71,7 @@ class Player {
         $this->science = new Science();
         $this->isTrashing = false;
         $this->isBuildWonder = false;
+        $this->wonderStage = 0;
         $this->leftPlayer = null;
         $this->rightPlayer = null;
         $this->discounts = array('left' => array(), 'right' => array());
@@ -149,11 +152,13 @@ class Player {
 
     public function sendStartInfo($playerInfo) {
         $tojson = function($a) { return $a->json(); };
+        $wonderInfo = array("name" => $this->wonderName);
+        if (isset($this->wonder['resource']))
+            $wonderInfo['resource'] = $this->wonder['resource']->json();
         $startInfo = array(
             "coins" => $this->coins,
-            "wonder" => $this->wonder["name"],
+            "wonder" => $wonderInfo,
             "plinfo" => $playerInfo,
-            "resource" => $this->wonder['resource'],
             "military" => $this->military->json(),
             "neighbors" => array('left' => $this->leftPlayer->id(),
                                  'right' => $this->rightPlayer->id()),
@@ -178,31 +183,40 @@ class Player {
         $this->send('joingame', array('players' => $players));
     }
 
-    public function findCost(WonderCard $card) {
-        $possibilities = $this->calculateCost($card);
+    public function findCost(WonderCard $card, $type) {
+        $possibilities = $this->calculateCost($card, $type);
 
         // Save off what we just calculated so we can verify a cost strategy
         // when one is provided when playing the card
-        $this->_lastCostCard = $card;
         $this->_lastCost = $possibilities;
+        $this->_lastCostCard = $card;
 
         // Send off everything we just found
         $this->send('possibilities', array('combs' => $possibilities));
     }
 
-    private function calculateCost(WonderCard $card) {
-        // check for duplicates
-        foreach ($this->cardsPlayed as $cardPlayed)
-            if ($cardPlayed->getName() == $card->getName())
-                return array();
+    private function calculateCost(WonderCard $card, $type) {
+        if ($type == 'card') {
+            // check for duplicates
+            foreach ($this->cardsPlayed as $cardPlayed)
+                if ($cardPlayed->getName() == $card->getName())
+                    return array();
 
-        // check if it's a prerequisite for being free
-        foreach ($this->cardsPlayed as $cardPlayed)
-            if ($cardPlayed->getName() == $card->getPrereq())
-                return array(array());
+            // check if it's a prerequisite for being free
+            foreach ($this->cardsPlayed as $cardPlayed)
+                if ($cardPlayed->getName() == $card->getPrereq())
+                    return array(array());
+
+            $required = $card->getResourceCost();
+        } else { // $type == 'wonder'
+            // Can't over-build the wonder
+            if ($this->wonderStage == count($this->wonder['stages']))
+                return array();
+            $stage = $this->wonder['stages'][$this->wonderStage];
+            $required = $stage['requirements'];
+        }
 
         // Otherwise, we're going to have to pay for this card somehow
-        $required = $card->getResourceCost();
         $have = array();
 
         // We get all our resources for free
@@ -237,10 +251,37 @@ class Player {
             return false;
 
         $ret = $this->_lastCost[$selection];
-
         unset($this->_lastCost);
         unset($this->_lastCostCard);
-
         return $ret;
+    }
+
+    public function playWonderStage() {
+        $stage = $this->wonder['stages'][$this->wonderStage];
+        $this->wonderStage++;
+        // Do all the easy things first
+        if (isset($stage['military']))
+            $this->military->add($stage['military']);
+        if (isset($stage['coins']))
+            $this->addCoins($stage['coins']);
+        if (isset($stage['points']))
+            $this->points += $stage['points'];
+        if (isset($stage['science']))
+            $this->science->add(Science::ANY); // only babylon for now
+        if (isset($stage['resource']))
+            $this->addResource($stage['resource']);
+        if (!isset($stage['custom']))
+            return;
+
+        switch ($stage['custom']) {
+            case '1free':   // olympia's 1 free card per age
+                break;
+            case 'guild':   // olympia's steal a guild at the end of the game
+                break;
+            case 'discard': // halikarnassus's play from the discard pile
+                break;
+            case 'play2':   // babylon's play both cards at the end of a hand
+                break;
+        }
     }
 }

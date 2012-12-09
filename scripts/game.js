@@ -13,7 +13,7 @@ var SevenWonders = function(socket, args){
 
     // select wonder image here (load in appropriately)
     // TODO: let player choose wonder side
-    $('#wonder').css('background', 'url(images/wonders/' + this.wonder.toLowerCase() + 'A.png) no-repeat center center');
+    $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + 'A.png) no-repeat center center');
 
     var panelOut = false;
     $('#resources a').click(function(){
@@ -276,9 +276,9 @@ SevenWonders.prototype = {
                     if($(this).hasClass('selected')){
                         $(this).css('z-index', 1);
                         $(this).animate({
-                            width: self.cardWidth, 
-                            height: self.cardHeight, 
-                            left: '+=25px', 
+                            width: self.cardWidth,
+                            height: self.cardHeight,
+                            left: '+=25px',
                             bottom: '+=38px',
                             rotate: $(this).data('rotation')
                         }, 200);
@@ -289,9 +289,9 @@ SevenWonders.prototype = {
                         $('.card.selected').css('z-index', 1);
                         $('.card.selected').each(function(){
                             $(this).animate({
-                                width: self.cardWidth, 
-                                height: self.cardHeight, 
-                                left: '+=25px', 
+                                width: self.cardWidth,
+                                height: self.cardHeight,
+                                left: '+=25px',
                                 bottom: '+=38px',
                                 rotate: $(this).data('rotation')
                             }, 200);
@@ -327,7 +327,7 @@ SevenWonders.prototype = {
                     card.addClass('highlighted');
                     self.send([card.find('h1').html(), 'trash'], 'cardplay');
                     self.trashing = true;
-                    
+
                     card.find('.options a:not(.play)').animate({opacity: 0}, 200)
                                                       .css('visibility', 'hidden');
                     card.find('.options .play').css('background-image', 'url(images/tokens/no.png');
@@ -337,15 +337,24 @@ SevenWonders.prototype = {
 
                 $('.play').click(function(e){
                     e.stopPropagation()
-                    var card = $(this).parent().parent();
+                    var card = $(this).closest('.card');
                     if(card.hasClass('highlighted')){
                         $(this).animate({opacity: 0}, 200, function(){
                             self.resetHighlight();
                         });
                         self.send('', 'cardignore');
                     } else {
-                        self.send({value: card.find('h1').html()}, 'checkresources');
+                        var opts = {value: card.find('h1').html(), type: 'card'};
+                        self.send(opts, 'checkresources');
                     }
+                    self.trashing = false;
+                    return false;
+                });
+
+                $('.wonder').click(function (e) {
+                    var card = $(this).closest('.card');
+                    var opts = {value: card.find('h1').html(), type: 'wonder'};
+                    self.send(opts, 'checkresources');
                     self.trashing = false;
                     return false;
                 });
@@ -360,7 +369,7 @@ SevenWonders.prototype = {
                                .animate({opacity: 1}, 200);
                     } else {
                         $(this).css('visibility', 'hidden');
-                    }                
+                    }
                 });
             break;
 
@@ -399,7 +408,7 @@ SevenWonders.prototype = {
                 } else {
                     var minCost = 100;
                     for(var i in args.combs){
-                        var combo = args.combs[i]; 
+                        var combo = args.combs[i];
                         var cost = combo.left + combo.right;
                         if(cost < minCost) minCost = cost;
                     }
@@ -462,7 +471,7 @@ SevenWonders.prototype = {
             case 'error':
                 // todo: more fancy alerts
                 if($('.card.selected').length){
-                    
+
                 }   else {
                     alert(args.data)
                 }

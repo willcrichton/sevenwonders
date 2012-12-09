@@ -21,36 +21,30 @@ class SevenWonders {
     public function __construct(){
         global $deck;
         $this->deck = $deck;
-        $this->wonders = array(
-            array(
-                "name" => "Olympia",
-                "resource" => Resource::one(Resource::WOOD)
-            ),
-            array(
-                "name" => "Rhodos",
-                "resource" => Resource::one(Resource::ORE)
-            ),
-            array(
-                "name" => "Alexandria",
-                "resource" => Resource::one(Resource::GLASS)
-            ),
-            array(
-                "name" => "Ephesos",
-                "resource" => Resource::one(Resource::PAPER)
-            ),
-            array(
-                "name" => "Halikarnassus",
-                "resource" => Resource::one(Resource::LINEN)
-            ),
-            array(
-                "name" => "Gizah",
-                "resource" => Resource::one(Resource::STONE)
-            ),
-            array(
-                "name" => "Babylon",
-                "resource" => Resource::one(Resource::CLAY)
-            )
-        );
+        $this->wonders = $this->loadWonders();
+    }
+
+    private function loadWonders() {
+        $wonders = json_decode(file_get_contents("cards/wonders.json"), true);
+        foreach ($wonders as &$wonder) {
+            foreach ($wonder as $side => &$value) {
+                if ($side == 'name')
+                    continue;
+
+                if (isset($value['resource']))
+                    $value['resource'] =
+                        WonderCard::csvResources($value['resource'], true)[0];
+
+                foreach ($value['stages'] as &$stage) {
+                    if (isset($stage['resource']))
+                        $stage['resource'] =
+                            WonderCard::csvResources($stage['resource'], false)[0];
+                    $stage['requirements'] =
+                        WonderCard::csvResources($stage['requirements'], false);
+                }
+            }
+        }
+        return $wonders;
     }
 
     public function log($msg){
@@ -89,8 +83,10 @@ class SevenWonders {
 
             // select a wonder
             $wonder = $this->wonders[array_pop($wonderKeys)];
-            $player->wonder = $wonder;
-            $player->addResource($wonder['resource']);
+            $player->wonderName = $wonder['name'];
+            $player->wonder = $wonder['a']; // TODO: not here
+            if (isset($player->wonder['resource']))
+                $player->addResource($player->wonder['resource']);
         }
 
         // shuffle order of players
@@ -163,14 +159,19 @@ class SevenWonders {
                 $this->log("{$player->info()} trashing " . $card->getName());
                 $player->addCoins(3);
                 $player->isTrashing = false;
-            //} elseif($player->isWonderBuilding == true){
+            } elseif ($player->isBuildWonder == true) {
+                $this->log("{$player->info()} wondering " . $card->getName());
+                $player->playWonderStage();
+                $player->isBuildWonder = false;
             } else {
                 $this->log("{$player->info()}) playing " . $card->getName());
                 $card->play($player);
                 $player->cardsPlayed[] = $card;
-
-                // Consume money cost for this player and pay adjacent players
                 $player->addCoins(-1 * $card->getMoneyCost());
+            }
+
+            if (isset($player->pendingCost)) {
+                // Consume money cost for this player and pay adjacent players
                 foreach ($player->pendingCost as $dir => $cost) {
                     if ($dir == 'left')
                         $player->leftPlayer->addCoins($cost);
@@ -179,6 +180,7 @@ class SevenWonders {
                     $player->addCoins(-1 * $cost);
                 }
             }
+
             unset($player->hand[array_search($card, $player->hand)]);
         }
 
@@ -222,15 +224,17 @@ class SevenWonders {
                 }
                 if (!isset($foundCard)) // don't have the specified card
                     break;
+
                 if ($args['value'][1] == 'trash') {
-                    $user->isTrashing = true;
                     unset($user->pendingCost);
+                    $user->isTrashing = true;
+                    $user->isBuildWonder = false;
                 } else {
-                    // TODO: this '0' should be an input from the message
                     $cost = $user->cardCost($foundCard, $args['value'][2]);
                     if ($cost === false)
                         break;
                     $user->isTrashing = false;
+                    $user->isBuildWonder = ($args['value'][1] == 'wonder');
                     $user->pendingCost = $cost;
                 }
                 $this->log("{$user->info()} chose {$foundCard->getName()}");
@@ -258,7 +262,7 @@ class SevenWonders {
                 if(!isset($toPlay))
                     return;
 
-                $user->findCost($toPlay);
+                $user->findCost($toPlay, $args['type']);
                 break;
 
             default:
