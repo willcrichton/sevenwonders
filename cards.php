@@ -1,110 +1,25 @@
 <?php
 
-function array_inc(&$arr, $idx, $amt = 1) {
-    if (isset($arr[$idx]))
-        $arr[$idx] += $amt;
-    else
-        $arr[$idx] = $amt;
+require_once('scoring.php');
+
+function arrowsToDirection($str){
+    $directions = array();
+    for($i = 0; $i < strlen($str); $i++){
+        $directions[] = $str[$i] == '<' ? 'left' : ($str[$i] == '>' ? 'right' : 'self');
+    }
+    return $directions;
 }
 
 class WonderCard {
-    protected $name;
-    protected $color;
-    protected $moneyCost;
-    protected $resourceCost;
-    protected $age;
-    protected $numPlayers;
-    protected $command;
-    protected $playFunc;
-    protected $freePrereq;
-
-    static function parseFunc($command, $card, $player, $ignore_this){
-        switch($card->getColor()){
-            case 'red':
-                $player->military += intval($command);
-                break;
-
-            case 'blue':
-                $player->points += intval($command);
-                break;
-
-            case 'yellow':
-                if($card->getAge() == 1){
-                    if(preg_match('/[0-9]/', $command))
-                        $player->addCoins(intval($command));
-                    else {
-                        $args = explode(' ', $command);
-                        $directions = arrowsToDirection($args[0]);
-                        $resources = getResourceCost($args[1]);
-                        foreach($resources as $resource => $amount){
-                            foreach($directions as $dir){
-                                $player->discounts[$dir][$resource] = !isset($player->discounts[$dir][$resource]) ? 1
-                                    : $player->discounts[$dir][$resource] + 1;
-                            }
-                        }
-                    }
-                } elseif($card->getAge() == 2){
-                    // check for yellow non-buyable resources
-                    if(strpos($command, '/') !== false){
-                        $resources = getResourceCost($command);
-                        $player->addResource(array_keys($resources), 1, false);
-                    } else {
-                        $args = explode(' ', $command);
-                        $directions = arrowsToDirection($args[0]);
-                        $coins = 0;
-                        $color = $args[1];
-                        $mult = intval($args[2]);
-                        foreach($directions as $dir){
-                            $pl = $dir == 'left' ? $player->leftPlayer : ($dir == 'right' ? $player->rightPlayer : $player);
-                            foreach($pl->cardsPlayed as $c){
-                                if($c->getColor() == $color) $coins += $mult;
-                            }
-                        }
-                        $player->addCoins($coins);
-                    }
-                } elseif($card->getAge() == 3){
-                    preg_match('/\((.)\)\{(.)\} (.+)?/', $command, $matches);
-                    // when/how do we want to evaluate points??
-                    $coins = $matches[1]; $color = $matches[3];
-                    $coinsToGive = 0;
-                    if($color == 'wonder'){
-                        // check for wonder construction here
-                    } else {
-                        foreach($player->cardsPlayed as $card){
-                            if($card->getColor() == $color){
-                                $coinsToGive += $coins;
-                            }
-                        }
-                    }
-                    if($coinsToGive > 0) $player->addCoins($coinsToGive);
-                }
-                break;
-
-            case 'green':
-                $player->addScience(intval($command));
-                break;
-
-            case 'purple':
-                if($card->getName() == 'Scientists Guild'){
-                    $player->addScience(0);
-                }
-                // none of these give coins or anything, so don't need to check
-                // until the end
-                break;
-
-            case 'brown': case 'grey':
-                // CHECK FOR DOUBLE RESOURCE VS TWO OPTION RESOURCE
-                $resources = WonderCards::csvResourceCost($command);
-                if(strpos($command, '/') !== false){
-                    $player->addResource(array_keys($resources), 1, true);
-                } else {
-                    foreach($resources as $resource => $amount){
-                        $player->addResource($resource, $amount, true);
-                    }
-                }
-                break;
-        }
-    }
+    private $name;
+    private $color;
+    private $moneyCost;
+    private $resourceCost;
+    private $age;
+    private $numPlayers;
+    private $command;
+    private $playFunc;
+    private $freePrereq;
 
     static function csvNumPlayers($fields){
         // All guilds only have one copy and have a special way of being added
@@ -127,26 +42,39 @@ class WonderCard {
         return $numplayers;
     }
 
-    static function csvResourceCost($str){
+    static function csvResources($str, $buyable){
         $resources = array(
-            'S' => 'stone',
-            'T' => 'wood',
-            'W' => 'wood',
-            'O' => 'ore',
-            'C' => 'clay',
-            'L' => 'linen',
-            'G' => 'glass',
-            'P' => 'paper'
+            'S' => Resource::STONE,
+            'T' => Resource::WOOD,
+            'W' => Resource::WOOD,
+            'O' => Resource::ORE,
+            'C' => Resource::CLAY,
+            'L' => Resource::LINEN,
+            'G' => Resource::GLASS,
+            'P' => Resource::PAPER
         );
         $cost = array();
-        for($i = 0; $i < strlen($str); $i++){
-            if (isset($resources[$str[$i]]))
-                array_inc($cost, $resources[$str[$i]]);
+        if (strpos($str, '/') !== false){
+            $resource = new Resource(true, $buyable);
+            for($i = 0; $i < strlen($str); $i++){
+                if (isset($resources[$str[$i]]))
+                    $resource->add($resources[$str[$i]]);
+            }
+            return array($resource);
         }
-        return $cost;
+
+        $ret = array();
+        for($i = 0; $i < strlen($str); $i++){
+            if (isset($resources[$str[$i]])) {
+                $res = new Resource(false, $buyable);
+                $res->add($resources[$str[$i]]);
+                $ret[] = $res;
+            }
+        }
+        return $ret;
     }
 
-    static function import($age, $csv) {
+    public static function import($age, $csv) {
         $cards = array();
         foreach (WonderCard::csvNumPlayers($csv) as $nplayers) {
             $card = new WonderCard();
@@ -158,9 +86,9 @@ class WonderCard {
 
             $card->moneyCost = preg_match('/([0-9])/', $csv[1], $matches) ?
                 $matches[1] : 0;
-            $card->resourceCost = WonderCard::csvResourceCost($csv[1]);
+            $card->resourceCost = WonderCard::csvResources($csv[1], true);
             $card->numPlayers = $nplayers;
-            if (isset($_ENV['DEBUG'])) {
+            if (getenv('DEBUG')) {
                 $card->numPlayers = 1; // use all cards in development
             }
 
@@ -190,10 +118,6 @@ class WonderCard {
         return $this->resourceCost;
     }
 
-    function getCommand(){
-        return $this->command;
-    }
-
     function getAge(){
         return $this->age;
     }
@@ -206,24 +130,172 @@ class WonderCard {
         return $this->freePrereq;
     }
 
-    function play($user, $args){
-        if($this->moneyCost != 0)
-            $user->addCoins(-1 * $this->moneyCost);
-        // calculate resources/buying from neighbors here
-        // include temp resources
-        return WonderCard::parseFunc($this->command, $this, $user, $args);
+    private function thirdAgeYellowPoints() {
+        preg_match('/\((.)\)\{(.)\} (.+)?/', $this->command, $matches);
+        return intval($matches[2]);
     }
 
-    public function __call($closure, $args)
-    {
-        call_user_func_array($this->$closure, $args);
+    private function thirdAgeYellowColor() {
+        preg_match('/\((.)\)\{(.)\} (.+)?/', $this->command, $matches);
+        return $matches[3];
+    }
+
+    private function thirdAgeYellowCoins() {
+        preg_match('/\((.)\)\{(.)\} (.+)?/', $this->command, $matches);
+        return intval($matches[1]);
+    }
+
+    function play(Player $user){
+        switch($this->color){
+            case 'red':
+                $user->military->add(intval($this->command));
+                break;
+
+            case 'blue':
+                $user->points += intval($this->command);
+                break;
+
+            case 'yellow':
+                if ($this->getAge() == 1) {
+                    if (preg_match('/[0-9]/', $this->command)) {
+                        $user->addCoins(intval($this->command));
+                    } else {
+                        $args = explode(' ', $this->command);
+                        $directions = arrowsToDirection($args[0]);
+                        $resources = WonderCard::csvResources($args[1], false);
+                        foreach ($resources as $resource)
+                            foreach ($directions as $dir)
+                                $user->addDiscount($dir, $resource);
+                    }
+                } elseif($this->getAge() == 2) {
+                    // check for yellow non-buyable resources
+                    if(strpos($this->command, '/') !== false){
+                        $res = WonderCard::csvResources($this->command, false);
+                        $user->addResource($res[0]);
+                    } else {
+                        $args = explode(' ', $this->command);
+                        $directions = arrowsToDirection($args[0]);
+                        $coins = 0;
+                        $color = $args[1];
+                        $mult = intval($args[2]);
+                        foreach($directions as $dir){
+                            $pl = $dir == 'left' ? $user->leftPlayer : ($dir == 'right' ? $user->rightPlayer : $user);
+                            foreach($pl->cardsPlayed as $c){
+                                if($c->getColor() == $color)
+                                    $coins += $mult;
+                            }
+                        }
+                        $user->addCoins($coins);
+                    }
+                } elseif($this->getAge() == 3) {
+                    $coins = $this->thirdAgeYellowCoins();
+                    $points = $this->thirdAgeYellowPoints();
+                    $color = $this->thirdAgeYellowColor();
+                    // Be sure to count this yellow card for coin increase if
+                    // we get coins per yellow card.
+                    $coinsToGive = ($color == 'yellow' ? $coins : 0);
+                    if ($color == 'wonder') {
+                        // TODO: check for wonder construction here
+                    } else {
+                        foreach ($user->cardsPlayed as $card) {
+                            if($card->getColor() == $color){
+                                $coinsToGive += $coins;
+                            }
+                        }
+                    }
+                    if ($coinsToGive > 0)
+                        $user->addCoins($coinsToGive);
+                }
+                break;
+
+            case 'green':
+                $user->science->add(intval($this->command));
+                break;
+
+            case 'purple':
+                if ($this->getName() == 'Scientists Guild') {
+                    $user->science->add(Science::ANY);
+                }
+                // none of these give coins or anything, so don't need to check
+                // until the end
+                break;
+
+            case 'brown': case 'grey':
+                foreach (WonderCard::csvResources($this->command, true) as $r)
+                    $user->addResource($r);
+                break;
+        }
+    }
+
+    public function points(Player $player) {
+        if ($this->age != 3)
+            return 0;
+        if ($this->color == 'yellow') {
+            $mult = $this->thirdAgeYellowPoints();
+            $color = $this->thirdAgeYellowColor();
+            $sum = 0;
+            if($color == 'wonder'){
+                // TODO: check for wonders here
+            } else {
+                foreach($player->cardsPlayed as $c){
+                    if ($c->color == $color)
+                        $sum += $mult;
+                }
+            }
+            return $sum;
+        }
+        if (!$this->isGuild() || $this->getName() == "Scientists Guild")
+            return 0;
+
+        $args = explode(' ', $this->command);
+        $color = $args[1];
+        $mult = intval($args[2]);
+        $total = 0;
+        /************* THIS NEEDS TO BE TESTED ****************/
+        foreach(arrowsToDirection($args[0]) as $dir){
+            $pl = $player->neighbor($dir);
+            switch ($color) {
+                // $mult points for each military loss
+                case '-1':
+                    $total += $mult * $pl->military->losses();
+                    break;
+                // $mult points for each wonder stage built
+                case 'wonder':
+                    // TODO: check for wonder here
+                    break;
+                // $mult points for each brown/grey/blue card
+                case 'brown,grey,blue':
+                    foreach (explode(',', $color) as $subcolor) {
+                        foreach ($pl->cardsPlayed as $c) {
+                            if ($c->getColor() == $color)
+                                $total += $mult;
+                        }
+                    }
+                    break;
+                // $mult cards for each $color card played
+                default:
+                    foreach($pl->cardsPlayed as $c){
+                        if($c->getColor() == $color)
+                            $total += $mult;
+                    }
+                    break;
+            }
+        }
+        return $total;
+    }
+
+    public function json() {
+        return array(
+            'name' => $this->getName(),
+            'color' => $this->getColor()
+        );
     }
 }
 
 class WonderDeck {
-    protected $cards = array();
-    protected $guilds = array();
-    protected $hands = array();
+    private $cards = array();
+    private $guilds = array();
+    private $hands = array();
 
     public function addCards($cards){
         foreach ($cards as $card) {
@@ -235,49 +307,27 @@ class WonderDeck {
         }
     }
 
-    public function cardInfo($cards, $players = array()){
-        $info = array();
-        foreach($cards as $id => $card){
-            $cInfo = array(
-                    'name' => $card->getName(),
-                    'color' => $card->getColor(),
-                    'id' => $id
-                    );
-            foreach($players as $pl){
-                if($pl->getId() == $id and
-                   ($pl->isTrashing or $pl->isBuildWonder))
-                    $cInfo['trashing'] = true;
-            }
-            $info[] = $cInfo;
-        }
-        return $info;
-    }
-
     public function deal($age, $players){
         $numplayers = count($players);
         $playableCards = array();
 
-        if($age == 3){
+        if ($age == 3) {
             shuffle($this->guilds);
-            for($i = 0; $i < $numplayers + 2; $i++){
-                $playableCards[] = $guilds[$i];
+            for ($i = 0; $i < $numplayers + 2; $i++) {
+                $playableCards[] = $this->guilds[$i];
             }
         }
 
-        foreach($this->cards as $card) {
-            if($card->getNumPlayers() <= $numplayers and
+        foreach ($this->cards as $card) {
+            if ($card->getNumPlayers() <= $numplayers and
                     $card->getAge() == $age)
                 $playableCards[] = $card;
         }
 
         shuffle($playableCards);
 
-        foreach($players as $player){
-            $hand = array_splice($playableCards, 0, 7);
-            $player->hand = $hand;
-            $packet = packet(array('cards' => $this->cardInfo($hand, array()), 'age' => $age), "hand");
-            $player->sendString($packet);
-        }
+        foreach ($players as $player)
+            $player->hand = array_splice($playableCards, 0, 7);
     }
 
     public function import() {

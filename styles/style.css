@@ -367,17 +367,54 @@ h1.disconnect {
 				top: -25px;
 			}
 
+        .card .slider {
+            background: #EBDAC0;
+            position: absolute;
+            bottom: 5px;
+            height: 55px;
+            display: none;
+            padding: 5px 10px;
+            width: 153px;
+            overflow: hidden;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+            .card .slider > div {
+                font: bold 23px 'RomanSD';
+                float: left;
+                margin-top: -6px;
+            }
+
+            .card .slider .left {
+                margin-right: 20px;
+            }
+
+            .card .slider .right {
+                margin-left: 20px;
+            }
+
+            .card .slider h2 {
+                font-size: 23px;
+            }
+
+            .card .slider input[type=range]{
+                width: 75px;
+                float: left;
+                margin-top: 3px;
+            }
+
 		.card .options {
 			position: absolute;
-			bottom: -30px;
+			bottom: -78px;
 			text-align: center;
 			display: none;
 			overflow: auto;
 			width: 130%;
-			left: -5%;
+			left: -5px;
 		}
 
-			.card .options a {
+			/*.card .options a {
 				color: white;
 				text-shadow: 0 0 2px rgba(0,0,0,0.8);
 				display: block;
@@ -397,7 +434,31 @@ h1.disconnect {
 			.card .options a.undo {
 				display: none;
 				margin-left: 70px;
-			}
+			}*/
+
+            .card .options a {
+                display: block;
+                float: left;
+                width: 45px;
+                height: 45px;
+                border-radius: 50px;
+                background: rgba(128, 128, 128, 0.2) url(../images/tokens/trash.png) no-repeat center center;
+                border: 3px solid #85765A;
+                margin-top: 8px;
+                margin-right: 8px;
+            }
+
+            .card .options a.play {
+                background-image: url(../images/tokens/card.png);
+                width: 65px;
+                height: 65px;
+                margin-top: 0;
+            }
+
+            .card .options a.wonder {
+                margin-right: 0;
+                background-image: url(../images/tokens/pyramid.png);
+            }
 
 		.card:first-child {
 			margin-left: 0!important;

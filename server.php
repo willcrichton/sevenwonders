@@ -4,120 +4,147 @@
 // Set date to avoid errors
 date_default_timezone_set("America/New_York");
 
-function packet($args, $type){
-    $args = is_array($args) ? $args : array('data' => $args);
-    $args['messageType'] = $type;
-    return json_encode($args);
-}
-
-function arrowsToDirection($str){
-    $directions = array();
-    for($i = 0; $i < strlen($str); $i++){
-        $directions[] = $str[$i] == '<' ? 'left' : ($str[$i] == '>' ? 'right' : 'self');
-    }
-    return $directions;
+function gentoken() {
+    $chars = "abcdefghijklmnopqrstuvwxyz1234567890";
+    $string = "";
+    $nchars = strlen($chars);
+    for ($i = 0; $i < 30; $i++)
+        $string .= $chars[mt_rand(0, $nchars - 1)];
+    return $string;
 }
 
 // Run from command prompt > php demo.php
 require_once("includes/websocket.server.php");
 require_once("wonders.php");
+require_once("player.php");
 
 // Main server class
 class WonderServer implements IWebSocketServerObserver{
     protected $debug = true;
     protected $server;
-    protected $users = array();
+    protected $users = array(); // all users ever (keyed by $user->id)
+    protected $conns = array(); // all active connections (keyed by $conn->id)
     protected $games = array();
 
     public function __construct(){
         $this->server = new WebSocketServer('tcp://0.0.0.0:12345', 'superdupersecretkey');
         $this->server->addObserver($this);
-        //$this->server->addUriHandler("", new GameHandler());
     }
 
     public function onConnect(IWebSocketConnection $user){
-        $this->users[$user->getId()] = $user;
-        $user->sendString(packet("Guest {$user->getId()}", "myname"));
-        foreach($this->games as $game) 
-            if(!$game->started)
-                $user->sendString(packet(array('name' => $game->name, 'creator' => $game->creator->name, 'id' => $game->id), "newgame"));
-
-        $this->say("{$user->getId()} connected");
     }
 
-    public function broadcastAll($msg, $exclude=false){
-        foreach($this->users as $u) 
-            if(!$exclude || $u != $exclude) $u->sendString($msg);
+    public function broadcast($type, $msg, $exclude=null){
+        foreach($this->conns as $u)
+            if($u != $exclude)
+                $u->send($type, $msg);
     }
 
-    public function broadcastTo($msg, $players, $exclude=false){
-        foreach($players as $player)
-            if(!$exclude || $player != $exclude) $player->sendString($msg);
-    }
+    public function onMessage(IWebSocketConnection $conn, IWebSocketMessage $msg){
+        $arr = json_decode($msg->getData(), true);
+        // If this is a new websocket connection, handle the user up front
+        if ($arr['messageType'] == 'myid') {
+            if (isset($this->users[$arr['id']])) {
+                $user = $this->users[$arr['id']];
+            } else {
+                $user = new Player(gentoken(), $conn->getId());
+            }
+            $this->users[$user->id()] = $user;
+            $this->conns[$conn->getId()] = $user;
+            $user->setConnection($conn);
+            $user->send('myname',
+                        array('name' => $user->name(),
+                              'id'   => $user->id()));
 
-    public function onMessage(IWebSocketConnection $user, IWebSocketMessage $msg){
-        $arr = $msg->getData();
-        $arr = json_decode($arr, true);
+            if ($user->game() != null) {
+                if ($user->game()->started)
+                    $user->rejoinGame();
+                else
+                    $user->rejoinWaitingRoom();
+            } else {
+                foreach($this->games as $game) {
+                    if ($game->started)
+                        continue;
+                    $user->send('newgame',
+                                array('name' => $game->name,
+                                      'creator' => $game->creator->name(),
+                                      'id' => $game->id));
+                }
+            }
+
+            $this->say("{$user->id()} connected");
+            return;
+        }
+
+        // Otherwise we better have a user set for them, and then continue on
+        // as normally when processing the message
+        if (!isset($this->conns[$conn->getId()]))
+            return;
+        $user = $this->conns[$conn->getId()];
+
         switch($arr['messageType']){
             case 'newgame':
+                if ($user->game() != null)
+                    return;
+                // ERRORS NOT SHOWING ON CLIENT: FIX FIX FIX
+                if($arr['name'] == '')
+                    return $user->send('error', 'Game needs a valid name');
+
                 $game = new SevenWonders();
-                $game->name = $arr['name'];
                 $game->maxplayers = intval($arr['players']);
-                $game->id = count($this->games);
+                $game->name = $arr['name'];
+                $game->id = gentoken();
                 $game->server = $this;
                 $game->addPlayer($user);
 
-                // ERRORS NOT SHOWING ON CLIENT: FIX FIX FIX
-                if($game->maxplayers > 7 or $game->maxplayers < 1)
-                    return $user->sendString(packet('Cannot create game: number of players invalid', 'error'));
-                elseif($game->name == '') 
-                    return $user->sendString(packet('Game needs a valid name', 'error'));
+                $this->games[$game->id] = $game;
 
-                $this->games[] = $game;
-                $packet = packet(array('name' => $game->name, 'creator' => $game->creator->name, 'id' => $game->id), "newgame");
-                $this->broadcastAll($packet, $user);
+                if ($game->maxplayers > 1)
+                    $this->broadcast('newgame',
+                                     array('name' => $game->name,
+                                           'creator' => $game->creator->name(),
+                                           'id' => $game->id), $user);
                 break;
 
             case 'joingame':
-                if(!isset($user->game)){
-                    $id = intval($arr['id']);
-                    if(isset($this->games[$id]) && !$this->games[$id]->started){
-                        $this->games[$id]->addPlayer($user);
-                    } else {
-                        // error game not exist/game already started
-                    }
-                } else {
-                    // error already in game
-                }
+                if ($user->game() != null)
+                    break;
+                $id = $arr['id'];
+                if (!isset($this->games[$id]) || $this->games[$id]->started)
+                    break;
+                $this->games[$id]->addPlayer($user);
                 break;
 
             case 'changename':
-                if(!isset($user->game)){
-                    $user->name = $arr['name'] == '' ? 'Minge Baggerson' : $arr['name'];
+                if ($user->game() == null && $arr['name'] != '') {
+                    $user->setName($arr['name']);
                 }
                 // Broadcast name change here in case they're hosting a game?
                 break;
 
             default:
-                if(isset($user->game)) $user->game->onMessage($user, $arr);
-                else $user->sendString("Error: could not recognize command " . $arr['messageType']);
+                if($user->game() != null)
+                    $user->game()->onMessage($user, $arr);
+                else
+                    $user->send('error', "Error: could not recognize command " . $arr['messageType']);
                 break;
         }
     }
 
-    public function onDisconnect(IWebSocketConnection $user){
-        $this->say("{$user->getId()} disconnected");
-        foreach($this->games as $game)
-            if(in_array($user, $game->players))
-                $game->removePlayer($user);      
-        unset($this->users[$user->getId()]);
+    public function onDisconnect(IWebSocketConnection $conn){
+        if (!isset($this->conns[$conn->getId()]))
+            return;
+        $user = $this->conns[$conn->getId()];
+        unset($this->conns[$conn->getId()]);
+        $this->say("{$user->id()} disconnected");
     }
 
-    public function onAdminMessage(IWebSocketConnection $user, IWebSocketMessage $msg){
+    public function onAdminMessage(IWebSocketConnection $conn,
+                                   IWebSocketMessage $msg) {
         $this->say("Admin Message received!");
 
         $frame = WebSocketFrame::create(WebSocketOpcode::PongFrame);
-        $user->sendFrame($frame);
+        $conn->sendFrame($frame);
     }
 
     public function say($msg){
