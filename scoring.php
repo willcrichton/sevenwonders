@@ -9,11 +9,11 @@ class Resource {
     const GLASS = 5;
     const PAPER = 6;
 
-    private $amts = array(self::STONE => 0, self::WOOD => 0, self::ORE => 0,
+    protected $amts = array(self::STONE => 0, self::WOOD => 0, self::ORE => 0,
                           self::CLAY => 0, self::LINEN => 0, self::GLASS => 0,
                           self::PAPER => 0);
-    private $only_one = false;
-    private $_buyable = false;
+    protected $only_one = false;
+    protected $_buyable = false;
 
     public function __construct($only_one, $buyable) {
         $this->only_one = $only_one;
@@ -22,6 +22,14 @@ class Resource {
 
     public function buyable() {
         return $this->_buyable;
+    }
+
+    public function only_one(){
+        return $this->only_one;
+    }
+
+    public function getAmts(){
+        return $this->amts;
     }
 
     public function add($resource) {
@@ -66,15 +74,15 @@ class Resource {
 
             // Next, prefer not only_one resources because they may force us to
             // make some form of decision multiple times.
-            if ($a->resource->only_one != $b->resource->only_one) {
-                if ($a->resource->only_one)
+            if ($a->resource->only_one() != $b->resource->only_one()) {
+                if ($a->resource->only_one())
                     return 1; // prefer $b
                 return -1;    // prefer $a
             }
 
             // Finally, prefer simpler resources first
-            return array_sum($a->resource->amts) -
-                   array_sum($b->resource->amts);
+            return array_sum($a->resource->getAmts()) -
+                   array_sum($b->resource->getAmts());
         });
 
         $ret = array();
