@@ -33,7 +33,7 @@ class SevenWonders {
 
                 if (isset($value['resource']))
                     $value['resource'] =
-                        WonderCard::csvResources($value['resource'], false)[0];
+                        WonderCard::csvResources($value['resource'], true)[0];
 
                 foreach ($value['stages'] as &$stage) {
                     if (isset($stage['resource']))
