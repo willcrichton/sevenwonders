@@ -85,8 +85,8 @@ class SevenWonders {
             $wonder = $this->wonders[array_pop($wonderKeys)];
             $player->wonderName = $wonder['name'];
             $player->wonder = $wonder['a']; // TODO: not here
-            if (isset($wonder['resource']))
-                $player->addResource($wonder['resource']);
+            if (isset($player->wonder['resource']))
+                $player->addResource($player->wonder['resource']);
         }
 
         // shuffle order of players
