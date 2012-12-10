@@ -84,9 +84,6 @@ class SevenWonders {
             // select a wonder
             $wonder = $this->wonders[array_pop($wonderKeys)];
             $player->wonderName = $wonder['name'];
-            $player->wonder = $wonder['a']; // TODO: not here
-            if (isset($player->wonder['resource']))
-                $player->addResource($player->wonder['resource']);
         }
 
         // shuffle order of players
@@ -109,8 +106,6 @@ class SevenWonders {
         foreach($this->players as $player){
             $player->sendStartInfo($playerInfo);
         }
-
-        $this->deal();
     }
 
     public function deal() {
@@ -263,6 +258,33 @@ class SevenWonders {
                     return;
 
                 $user->findCost($toPlay, $args['type']);
+                break;
+
+
+            case 'wonderside':
+                $side = $args['value'] == true ? 'a' : 'b';
+                $user->wonderSide = $side;
+                foreach($this->wonders as $wonder){
+                    if($wonder['name'] == $user->wonderName){
+                        $user->wonder = $wonder[$side];
+                        if (isset($user->wonder['resource']))
+                            $user->addResource($user->wonder['resource']);
+                        break;
+                    }
+                }
+
+                $allChosen = true;
+                foreach($this->players as $player){
+                    if(!isset($player->wonder)){
+                        $allChosen = false;
+                        break;
+                    }
+                }
+
+                if($allChosen){
+                    $this->log("All wonders chosen, dealing hands");
+                    $this->deal();
+                }
                 break;
 
             default:

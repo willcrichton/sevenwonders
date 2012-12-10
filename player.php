@@ -14,6 +14,8 @@ class Player {
     public $permResources;
     public $wonder;
     public $wonderName;
+    public $wonderStage;
+    public $wonderSide;
     public $order;
     public $hand;
     public $selectedCard;
@@ -28,7 +30,6 @@ class Player {
     public $leftPlayer;
     public $rightPlayer;
     public $discounts;
-    public $wonderStage;
 
     // Figuring out card costs
     private $_lastCostCard;
@@ -145,9 +146,11 @@ class Player {
     }
 
     public function sendHand() {
-        $info = array_map(function($c) { return $c->json(); }, $this->hand);
-        $this->send('hand',
-                    array('age' => $this->_game->age, 'cards' => $info));
+        if(isset($this->hand)){
+            $info = array_map(function($c) { return $c->json(); }, $this->hand);
+            $this->send('hand',
+                       array('age' => $this->_game->age, 'cards' => $info));
+        }
     }
 
     public function sendStartInfo($playerInfo) {
@@ -158,6 +161,7 @@ class Player {
         $startInfo = array(
             "coins" => $this->coins,
             "wonder" => $wonderInfo,
+            "wonderside" => $this->wonderSide,
             "plinfo" => $playerInfo,
             "military" => $this->military->json(),
             "neighbors" => array('left' => $this->leftPlayer->id(),

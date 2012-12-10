@@ -1,5 +1,4 @@
 var SevenWonders = function(socket, args){
-
     this.wonder = args.wonder;
     this.players = args.plinfo;
     this.coins = parseInt(args.coins);
@@ -9,33 +8,31 @@ var SevenWonders = function(socket, args){
     this.rightPlayed = {};
     this.trashing = false;
     this.neighbors = args.neighbors;
+    this.wonderSide = args.wonderside;
     this.colorOrder = ['brown', 'grey', 'yellow', 'red', 'green', 'purple', 'blue'];
-
+    this.cardWidth = 123;
+    this.cardHeight = 190;
+    
     // select wonder image here (load in appropriately)
-    // TODO: let player choose wonder side
-    $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + 'A.png) no-repeat center center');
-
-    var panelOut = false;
-    $('#resources a').click(function(){
-        if(panelOut){
-            $('#resourceSelect').animate({height: $('#resources').height(), bottom: 5}, 500);
-        } else {
-            $('#resourceSelect').animate({height: $('#resources').height() * 2.2, bottom: $('#resources').height()}, 500);
-        }
-        panelOut = !panelOut;
-    });
-
     var self = this;
-    $('#resourceSelect a').click(function(){
-        var info = {'left': {}, 'right': {}};
-        $('#resourceSelect input[type=text]').each(function(){
-            var args = $(this).attr('name').split('_');
-            if(parseInt($(this).attr('value')) > 0){
-                info[args[0]][args[1]] = parseInt($(this).attr('value'));
-            }
+    if(typeof args.wonder.resource == 'undefined'){ // hacky way of checking if player refreshed in middle of wonder picking 
+        $('#setup-container').fadeIn(1000);
+        $('#setup p strong').html(this.wonder.name.capitalize());
+        var imgname = "images/wonders/" + this.wonder.name.toLowerCase();
+        $('#setup').append('<img src="' + imgname + 'A.png" /><img src="' + imgname + 'B.png" />')
+        $('#setup img').click(function(){
+            var isA = $(this).attr('src').indexOf('A') > -1;
+            self.wonderSide = isA ? 'A' : 'B';
+            $('#wonder').css('background', 'url(images/wonders/' + self.wonder.name.toLowerCase() + self.wonderSide + '.png) no-repeat center center');
+            self.send(isA, 'wonderside');
+            $('#setup-container').fadeOut(200, function(){
+                $(this).css('display', 'none');
+                // show waiting screen for until hand pops up
+            })
         })
-        self.send(info, 'trade')
-    });
+    } 
+
+    $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + this.wonderSide + '.png) no-repeat center center');
     this.updateCoins();
     this.updateMilitary(args.military);
     var i;
@@ -53,8 +50,6 @@ var SevenWonders = function(socket, args){
 }
 
 SevenWonders.prototype = {
-    cardWidth: 123,
-    cardHeight: 190,
 
     send: function(opts, type){
         opts = (typeof opts == "object" && !(opts instanceof Array)) ? opts : {value: opts};
@@ -171,8 +166,7 @@ SevenWonders.prototype = {
     },
 
     cardDiv: function(idx, card) {
-        var div = $('<div class="card" id="card' + idx +
-                 '" style="background: #' + this.colorOrder[card.color] + ';">'+
+        var div = $('<div class="card" id="card' + idx +'">'+
                      '<h1>' + card.name + '</h1>' +
                      this.cardImageFromName(card.name) +
                      '<div class="options">\
@@ -482,4 +476,8 @@ SevenWonders.prototype = {
             break;
         }
     }
+}
+
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
 }
