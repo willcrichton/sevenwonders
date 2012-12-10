@@ -220,6 +220,16 @@ SevenWonders.prototype = {
         }
     },
 
+    chooseCard: function(card, index) {
+        card.addClass('highlighted');
+        var type = 'play';
+        if (this.trashing)
+            type = 'trash';
+        else if (this.buildingWonder)
+            type = 'wonder';
+        this.send([card.find('h1').html(), type, index], 'cardplay');
+    },
+
     onMessage: function(args, msg){
         switch(args.messageType){
             case 'hand':
@@ -344,10 +354,9 @@ SevenWonders.prototype = {
                     var card = $(this).parent().parent();
                     self.resetHighlight();
 
-                    card.addClass('highlighted');
-                    self.send([card.find('h1').html(), 'trash'], 'cardplay');
                     self.trashing = true;
                     self.buildingWonder = false;
+                    self.chooseCard(card, 0);
 
                     card.find('.options a:not(.play)').animate({opacity: 0}, 200)
                                                       .css('visibility', 'hidden');
@@ -432,67 +441,66 @@ SevenWonders.prototype = {
                     return;
                 }
                 var minCost = 100;
-                for(var i in args.combs){
+                for (var i in args.combs) {
                     var combo = args.combs[i];
                     var cost = combo.left + combo.right;
                     if(cost < minCost) minCost = cost;
                 }
-                if(minCost == 0 || typeof args.combs[0].left == "undefined"){
+                if (minCost == 0 || typeof args.combs[0].left == "undefined") {
                     this.resetHighlight();
                     $('.card:not(.ignore)').removeClass('highlighted');
-                    card.addClass('highlighted');
-                    this.send([card.find('h1').html(), 'play', 0], 'cardplay');
-                } else {
-                    var combos = [];
-                    for(var i in args.combs){
-                        var combo = args.combs[i];
-                        var cost = combo.left + combo.right;
-                        if(cost <= minCost + 1){
-                            combos.push(combo);
-                        }
-                        combo.index = i;
-                    }
-                    combos.sort(function(a, b){ return a.left < b.left });
-                    var firstMin = 0;
-                    for(var i = 0; i < combos.length; i++){
-                        if(combos[i].left + combos[i].right == minCost){
-                            firstMin = i; break;
-                        }
-                    }
-
-                    $('.card.selected .options a:not(.play)').animate({opacity: 0}, 200);
-                    $('.card.selected .slider .left').html(combos[firstMin].left);
-                    $('.card.selected .slider .right').html(combos[firstMin].right);
-                    $('.card.selected .slider input[type=range]').attr('max', combos.length - 1)
-                                                                 .attr('value', firstMin);
-                    $('.card.selected .slider').click(function(e){ e.stopPropagation(); })
-                        .css({'height': '0', display: 'block'})
-                        .animate({
-                            height: 65
-                        }, 200);
-                    $('.card.selected input[type=range]').change(function(){
-                        var val = $(this).attr('value');
-                        $('.card.selected .slider .left').html(combos[val].left);
-                        $('.card.selected .slider .right').html(combos[val].right);
-                    });
-
-                    var self = this;
-                    $('.card.selected .play').css('background-image', 'url(images/tokens/buy.png)')
-                        .unbind('click')
-                        .click(function(e){
-                            e.stopPropagation();
-                            var combo = combos[$('.card.selected .slider input[type=range]').attr('value')];
-                            self.resetHighlight();
-                            card.addClass('highlighted');
-                            self.send([card.find('h1').html(),
-                                       self.buildingWonder ? 'wonder' : 'play',
-                                       combo.index], 'cardplay');
-                            card.find('.slider').animate({height: 0}, 200, function(){
-                                $(this).css('display', 'none');
-                            });
-                            return false;
-                        });
+                    this.chooseCard(card, 0);
+                    return;
                 }
+
+                var combos = [];
+                for(var i in args.combs){
+                    var combo = args.combs[i];
+                    var cost = combo.left + combo.right;
+                    if(cost <= minCost + 1){
+                        combos.push(combo);
+                    }
+                    combo.index = i;
+                }
+                combos.sort(function(a, b){ return a.left < b.left });
+                var firstMin = 0;
+                for(var i = 0; i < combos.length; i++){
+                    if(combos[i].left + combos[i].right == minCost){
+                        firstMin = i; break;
+                    }
+                }
+
+                var card = $('.card.selected');
+                var slider = card.find('.slider');
+                card.find('.options a:not(.play)').animate({opacity: 0}, 200);
+                slider.find('.left').html(combos[firstMin].left);
+                slider.find('.right').html(combos[firstMin].right);
+                slider.find('input[type=range]').attr('max', combos.length - 1)
+                                                .attr('value', firstMin);
+                slider.click(function(e){ e.stopPropagation(); })
+                    .css({'height': '0', display: 'block'})
+                    .animate({
+                        height: 65
+                    }, 200);
+                card.find('input[type=range]').change(function(){
+                    var val = $(this).attr('value');
+                    slider.find('.left').html(combos[val].left);
+                    slider.find('.right').html(combos[val].right);
+                });
+
+                var self = this;
+                card.find('.play').css('background-image', 'url(images/tokens/buy.png)')
+                    .unbind('click')
+                    .click(function(e){
+                        e.stopPropagation();
+                        var combo = combos[$('.card.selected .slider input[type=range]').attr('value')];
+                        self.resetHighlight();
+                        self.chooseCard(card, combo.index);
+                        card.find('.slider').animate({height: 0}, 200, function(){
+                            $(this).css('display', 'none');
+                        });
+                        return false;
+                    });
                 break;
 
             case 'error':
