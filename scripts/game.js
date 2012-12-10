@@ -428,68 +428,69 @@ SevenWonders.prototype = {
                     }
                     card.find('.overlay').click(function(e){ e.stopPropagation(); removeErr(card); })
                     setTimeout(function(){ removeErr(card) }, 2000);
+                    return;
+                }
+                var minCost = 100;
+                for(var i in args.combs){
+                    var combo = args.combs[i];
+                    var cost = combo.left + combo.right;
+                    if(cost < minCost) minCost = cost;
+                }
+                if(minCost == 0 || typeof args.combs[0].left == "undefined"){
+                    this.resetHighlight();
+                    $('.card:not(.ignore)').removeClass('highlighted');
+                    card.addClass('highlighted');
+                    this.send([card.find('h1').html(), 'play', 0], 'cardplay');
                 } else {
-                    var minCost = 100;
+                    var combos = [];
                     for(var i in args.combs){
                         var combo = args.combs[i];
                         var cost = combo.left + combo.right;
-                        if(cost < minCost) minCost = cost;
+                        if(cost <= minCost + 1){
+                            combos.push(combo);
+                        }
+                        combo.index = i;
                     }
-                    if(minCost == 0 || typeof args.combs[0].left == "undefined"){
-                        this.resetHighlight();
-                        $('.card:not(.ignore)').removeClass('highlighted');
-                        card.addClass('highlighted');
-                        this.send([card.find('h1').html(), 'play', 0], 'cardplay');
-                    } else {
-                        var combos = [];
-                        for(var i in args.combs){
-                            var combo = args.combs[i];
-                            var cost = combo.left + combo.right;
-                            if(cost <= minCost + 1){
-                                combos.push(combo);
-                            }
-                            combo.index = i;
+                    combos.sort(function(a, b){ return a.left < b.left });
+                    var firstMin = 0;
+                    for(var i = 0; i < combos.length; i++){
+                        if(combos[i].left + combos[i].right == minCost){
+                            firstMin = i; break;
                         }
-                        combos.sort(function(a, b){ return a.left < b.left });
-                        var firstMin = 0;
-                        for(var i = 0; i < combos.length; i++){
-                            if(combos[i].left + combos[i].right == minCost){
-                                firstMin = i; break;
-                            }
-                        }
+                    }
 
-                        $('.card.selected .options a:not(.play)').animate({opacity: 0}, 200);
-                        $('.card.selected .slider .left').html(combos[firstMin].left);
-                        $('.card.selected .slider .right').html(combos[firstMin].right);
-                        $('.card.selected .slider input[type=range]').attr('max', combos.length - 1)
-                                                                     .attr('value', firstMin);
-                        $('.card.selected .slider').click(function(e){ e.stopPropagation(); })
-                            .css({'height': '0', display: 'block'})
-                            .animate({
-                                height: 65
-                            }, 200);
-                        $('.card.selected input[type=range]').change(function(){
-                            var val = $(this).attr('value');
-                            $('.card.selected .slider .left').html(combos[val].left);
-                            $('.card.selected .slider .right').html(combos[val].right);
-                        });
+                    $('.card.selected .options a:not(.play)').animate({opacity: 0}, 200);
+                    $('.card.selected .slider .left').html(combos[firstMin].left);
+                    $('.card.selected .slider .right').html(combos[firstMin].right);
+                    $('.card.selected .slider input[type=range]').attr('max', combos.length - 1)
+                                                                 .attr('value', firstMin);
+                    $('.card.selected .slider').click(function(e){ e.stopPropagation(); })
+                        .css({'height': '0', display: 'block'})
+                        .animate({
+                            height: 65
+                        }, 200);
+                    $('.card.selected input[type=range]').change(function(){
+                        var val = $(this).attr('value');
+                        $('.card.selected .slider .left').html(combos[val].left);
+                        $('.card.selected .slider .right').html(combos[val].right);
+                    });
 
-                        var self = this;
-                        $('.card.selected .play').css('background-image', 'url(images/tokens/buy.png)')
-                            .unbind('click')
-                            .click(function(e){
-                                e.stopPropagation();
-                                var combo = combos[$('.card.selected .slider input[type=range]').attr('value')];
-                                self.resetHighlight();
-                                card.addClass('highlighted');
-                                self.send([card.find('h1').html(), 
-                                           self.buildingWonder ? 'wonder' : 'play', 
-                                           combo.index], 'cardplay');
-                                card.find('.slider').animate({height: 0}, 200, function(){
-                                    $(this).css('display', 'none');
-                                });
+                    var self = this;
+                    $('.card.selected .play').css('background-image', 'url(images/tokens/buy.png)')
+                        .unbind('click')
+                        .click(function(e){
+                            e.stopPropagation();
+                            var combo = combos[$('.card.selected .slider input[type=range]').attr('value')];
+                            self.resetHighlight();
+                            card.addClass('highlighted');
+                            self.send([card.find('h1').html(),
+                                       self.buildingWonder ? 'wonder' : 'play',
+                                       combo.index], 'cardplay');
+                            card.find('.slider').animate({height: 0}, 200, function(){
+                                $(this).css('display', 'none');
                             });
-                    }
+                            return false;
+                        });
                 }
                 break;
 
