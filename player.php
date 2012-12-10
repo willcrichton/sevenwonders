@@ -294,8 +294,8 @@ class Player {
                 $resource->add(Resource::ORE);
                 $resource->add(Resource::WOOD);
                 $resource->add(Resource::STONE);
-                $this->addDiscount('left', $reource);
-                $this->addDiscount('right', $reource);
+                $this->addDiscount('left', $resource);
+                $this->addDiscount('right', $resource);
                 break;
         }
     }
