@@ -17,6 +17,7 @@ class SevenWonders {
     public $cardsChosen = array();
     public $wonders;
     public $playerInfo;
+    public $discard = array();
 
     public function __construct(){
         global $deck;
@@ -155,11 +156,9 @@ class SevenWonders {
             if ($player->isTrashing) {
                 $this->log("{$player->info()} trashing " . $card->getName());
                 $player->addCoins(3);
-                $player->isTrashing = false;
             } elseif ($player->isBuildWonder == true) {
                 $this->log("{$player->info()} wondering " . $card->getName());
                 $player->playWonderStage();
-                $player->isBuildWonder = false;
             } else {
                 $this->log("{$player->info()}) playing " . $card->getName());
                 $card->play($player);
@@ -182,8 +181,15 @@ class SevenWonders {
         }
 
         foreach ($this->players as $player) {
+            if ($player->isTrashing)
+                $this->discard[] = $player->selectedCard;
+            $player->isTrashing = false;
+            $player->isBuildWonder = false;
             unset($player->selectedCard);
             unset($player->pendingCost);
+
+            if ($this->turn == 6)
+                $this->discard[] = array_pop($player->hand);
         }
 
         $this->cardsChosen = array();
