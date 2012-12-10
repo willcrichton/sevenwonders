@@ -495,3 +495,27 @@ h1.disconnect {
 			#lastplayed ul {
 				padding-left: 20px;
 			}
+    #cardselect {
+        display: none;
+        overflow: auto;
+        width: 1200px;
+        margin: 0;
+        top: 0;
+        left: 0;
+        position: absolute;
+        height: 100%;
+        background-color: rgba(0, 0, 0, .7);
+        z-index: 10000;
+        padding: 50px;
+    }
+        #cardwindow {
+            display: none;
+            background-color: #CCB280;
+            height: 100%;
+            width: 100%;
+        }
+            #hovercardwindow {
+                background-color: #FFFFFF;
+                height: 100%;
+                margin-left: 1120px;
+            }

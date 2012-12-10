@@ -61,6 +61,47 @@ SevenWonders.prototype = {
         return '<img src="images/cards/' + name.toLowerCase().replace(/ /g, "") + '.png" />';
     },
 
+    selectcards: function(){
+        $("#cardselect").css({width: $('#game').width()-100, height: $('#game').height()-100});
+        $('#cardselect').fadeIn(1000);
+        $('#cardwindow').delay(500).fadeIn(1500);
+
+        var cardsDisplayed = [];
+        var trashCards = [{name: 'Altar', color: 'blue'},{name:'Stockade', color: 'red'},{name: 'Glassworks', color: 'grey'},{name: 'Clay Pool', color: 'brown'},{name: 'Tavern', color: 'yellow'},{name: 'School', color: 'green'},{name: 'Scientists Guild', color: 'purple'},{name: 'Forest Cave', color: 'brown'},{name: 'Loom', color: 'grey'}];
+        var count = trashCards.length;
+        var selectCardWidth = 123;
+        var selectCardHeight = 190;
+
+        for(i in trashCards){
+            var card = trashCards[i];
+            var carddiv = $('<div class="card" id="card' + count + '" style="background: #' + this.colorOrder[card.color] + ';">\
+                <h1>' + card.name + '</h1>\
+                ' + this.cardImageFromName(trashCards[i].name) + '\
+            </div>');
+            $('#cardwindow').prepend(carddiv);
+            carddiv.data('cardInfo', card);
+            count--;
+            var infoPos = $('#cardwindow').position();
+            console.log(carddiv.data('cardInfo'));
+            var cardColor = carddiv.data('cardInfo').color;
+            var index = this.colorOrder.indexOf(cardColor);
+            var numInColor = 0;
+            for(i in cardsDisplayed)
+                if(cardsDisplayed[i].data('cardInfo').color == cardColor) numInColor++; 
+
+            carddiv.find('.options, h1').css('display', 'none');
+            carddiv.css('z-index', 2000 - numInColor);
+            carddiv.animate({
+                left: infoPos.left + 60 + index * 138,
+                bottom: $('#cardselect').height() - 640 - infoPos.top + numInColor * 40,
+                width: selectCardWidth,
+                height: selectCardHeight,
+                opacity: 1
+            },200)              
+            cardsDisplayed.push(carddiv);
+        }
+    },
+
     updateCoins: function() {
         var golds = Math.floor(this.coins / 3);
         var silvers = this.coins % 3;
