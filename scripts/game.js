@@ -12,7 +12,7 @@ var SevenWonders = function(socket, args){
     this.colorOrder = ['brown', 'grey', 'yellow', 'red', 'green', 'purple', 'blue'];
     this.cardWidth = 123;
     this.cardHeight = 190;
-    
+
     // select wonder image here (load in appropriately)
     var self = this;
     if(typeof args.wonder.resource == 'undefined'){ // hacky way of checking if player refreshed in middle of wonder picking 
@@ -74,17 +74,14 @@ SevenWonders.prototype = {
 
         for(i in trashCards){
             var card = trashCards[i];
-            var carddiv = $('<div class="card" id="card' + count + '" style="background: #' + this.colorOrder[card.color] + ';">\
-                <h1>' + card.name + '</h1>\
-                ' + this.cardImageFromName(trashCards[i].name) + '\
-            </div>');
+            var carddiv = this.cardDiv(count, card);
             $('#cardwindow').prepend(carddiv);
             carddiv.data('cardInfo', card);
             count--;
             var infoPos = $('#cardwindow').position();
             console.log(carddiv.data('cardInfo'));
             var cardColor = carddiv.data('cardInfo').color;
-            var index = this.colorOrder.indexOf(cardColor);
+            var index = colorOrder.indexOf(cardColor);
             var numInColor = 0;
             for(i in cardsDisplayed)
                 if(cardsDisplayed[i].data('cardInfo').color == cardColor) numInColor++; 
