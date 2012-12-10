@@ -279,13 +279,23 @@ class Player {
             return;
 
         switch ($stage['custom']) {
-            case '1free':   // olympia's 1 free card per age
+            case '1free':    // olympia's 1 free card per age
                 break;
-            case 'guild':   // olympia's steal a guild at the end of the game
+            case 'guild':    // olympia's steal a guild at the end of the game
                 break;
-            case 'discard': // halikarnassus's play from the discard pile
+            case 'discard':  // halikarnassus's play from the discard pile
                 break;
-            case 'play2':   // babylon's play both cards at the end of a hand
+            case 'play2':    // babylon's play both cards at the end of a hand
+                break;
+
+            case 'discount': // olympia's discount COWS for both L/R
+                $resource = new Resource(false, false);
+                $resource->add(Resource::CLAY);
+                $resource->add(Resource::ORE);
+                $resource->add(Resource::WOOD);
+                $resource->add(Resource::STONE);
+                $this->addDiscount('left', $reource);
+                $this->addDiscount('right', $reource);
                 break;
         }
     }
