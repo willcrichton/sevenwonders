@@ -48,7 +48,9 @@ var SevenWonders = function(socket, args){
         var div = this.cardDiv(0, args.played[i]);
         $('#game').prepend(div);
         this.moveToBoard(div, false);
-    }
+   }
+   for (i = 0; i < args.wonder.stage; i++)
+       this.buildWonderStage();
 }
 
 SevenWonders.prototype = {
@@ -128,6 +130,21 @@ SevenWonders.prototype = {
         img.animate({opacity: 1}, speed);
     },
 
+    buildWonderStage: function() {
+        var check = $('<div class="check stage' + this.wonderStage + '"></div>');
+        $('#wonder').append(check);
+        var offset = 48 + 240 * (this.wonderStage - 1);
+        if(this.wonder.name == "gizah" && this.wonderSide == 'b'){
+            offset = this.wonderStage == 1 ? 3 : 208 * (this.wonderStage - 1);
+        } else if(this.wonder.name == "rhodos" && this.wonderSide == 'b'){
+            offset = 283 + 240 * (this.wonderStage - 1);
+        }
+        check.css('left', offset);
+        check.fadeIn(200);
+
+        this.wonderStage++;
+    },
+
     moveToBoard: function(card, animate) {
         card.addClass('played').attr('id', '');
         if (this.trashing) {
@@ -138,23 +155,12 @@ SevenWonders.prototype = {
                 opacity: 0,
             }, 500, function(){ $(this).remove(); });
             return;
-        } else if(this.buildingWonder){
+        } else if(this.buildingWonder) {
             this.buildingWonder = false;
             card.animate({
-                // animate to board where wonder is                   
+                // animate to board where wonder is
             }).fadeOut(200);
-            var check = $('<div class="check stage' + this.wonderStage + '"></div>');
-            $('#wonder').append(check);
-            var offset = 48 + 240 * (this.wonderStage - 1);
-            if(this.wonder.name == "gizah" && this.wonderSide == 'b'){
-                offset = this.wonderStage == 1 ? 3 : 208 * (this.wonderStage - 1);
-            } else if(this.wonder.name == "rhodos" && this.wonderSide == 'b'){
-                offset = 283 + 240 * (this.wonderStage - 1);
-            }
-            check.css('left', offset);
-            check.fadeIn(200);
-
-            this.wonderStage++;
+            this.buildWonderStage();
             return;
         }
 
@@ -333,11 +339,6 @@ SevenWonders.prototype = {
                     }
                 });
 
-                function chooseCard(card, playtype){
-                    card.addClass('highlighted');
-                    self.send([card.find('h1').html(), playtype], 'cardplay');
-                }
-
                 $('.trash').click(function(e){
                     e.stopPropagation()
                     var card = $(this).parent().parent();
@@ -346,7 +347,7 @@ SevenWonders.prototype = {
                     card.addClass('highlighted');
                     self.send([card.find('h1').html(), 'trash'], 'cardplay');
                     self.trashing = true;
-                    self.buildingWonder
+                    self.buildingWonder = false;
 
                     card.find('.options a:not(.play)').animate({opacity: 0}, 200)
                                                       .css('visibility', 'hidden');

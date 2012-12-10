@@ -155,7 +155,8 @@ class Player {
 
     public function sendStartInfo($playerInfo) {
         $tojson = function($a) { return $a->json(); };
-        $wonderInfo = array("name" => $this->wonderName);
+        $wonderInfo = array("name" => $this->wonderName,
+                            "stage" => $this->wonderStage);
         if (isset($this->wonder['resource']))
             $wonderInfo['resource'] = $this->wonder['resource']->json();
         $startInfo = array(
