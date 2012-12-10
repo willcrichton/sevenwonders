@@ -17,7 +17,7 @@ var SevenWonders = function(socket, args){
 
     // select wonder image here (load in appropriately)
     var self = this;
-    if(typeof args.wonder.resource == 'undefined'){ // hacky way of checking if player refreshed in middle of wonder picking 
+    if(typeof args.wonder.resource == 'undefined'){ // hacky way of checking if player refreshed in middle of wonder picking
         $('#setup-container').fadeIn(1000);
         $('#setup p strong').html(this.wonder.name.capitalize());
         var imgname = "images/wonders/" + this.wonder.name.toLowerCase();
@@ -32,7 +32,7 @@ var SevenWonders = function(socket, args){
                 // show waiting screen for until hand pops up
             })
         })
-    } 
+    }
 
     $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + this.wonderSide + '.png) no-repeat center center');
     this.updateCoins();
