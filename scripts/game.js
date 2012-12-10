@@ -34,23 +34,25 @@ var SevenWonders = function(socket, args){
         })
     }
 
-    $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + this.wonderSide + '.png) no-repeat center center');
-    this.updateCoins();
-    this.updateMilitary(args.military);
-    var i;
-    for (i = 0; i < args.leftcards.length; i++)
-        this.updateColumn('left', args.leftcards[i].color,
-                          this.cardImageFromName(args.leftcards[i].name), 0);
-    for (i = 0; i < args.rightcards.length; i++)
-        this.updateColumn('right', args.rightcards[i].color,
-                          this.cardImageFromName(args.rightcards[i].name), 0);
-    for (i = 0; i < args.played.length; i++) {
-        var div = this.cardDiv(0, args.played[i]);
-        $('#game').prepend(div);
-        this.moveToBoard(div, false);
+    if(args.rejoin == true){
+        $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + this.wonderSide + '.png) no-repeat center center');
+        this.updateCoins();
+        this.updateMilitary(args.military);
+        var i;
+        for (i = 0; i < args.leftcards.length; i++)
+            this.updateColumn('left', args.leftcards[i].color,
+                              this.cardImageFromName(args.leftcards[i].name), 0);
+        for (i = 0; i < args.rightcards.length; i++)
+            this.updateColumn('right', args.rightcards[i].color,
+                              this.cardImageFromName(args.rightcards[i].name), 0);
+        for (i = 0; i < args.played.length; i++) {
+            var div = this.cardDiv(0, args.played[i]);
+            $('#game').prepend(div);
+            this.moveToBoard(div, false);
+       }
+       for (i = 0; i < args.wonder.stage; i++)
+           this.buildWonderStage();
    }
-   for (i = 0; i < args.wonder.stage; i++)
-       this.buildWonderStage();
 }
 
 SevenWonders.prototype = {
@@ -427,7 +429,7 @@ SevenWonders.prototype = {
                 console.log(args.combs);
                 var card = $('.card.selected');
                 if(!args.combs[0]){
-                    card.append('<div class="overlay"><h2>Error</h2>It\'s impossible to play this card</div>');
+                    card.append('<div class="overlay"><h2>Error</h2>You cannot complete that action</div>');
                     card.find('.overlay').animate({ opacity: '0.9' }, 200);
                     card.find('img').animate({opacity: '0.3'}, 200);
                     var removeErr = function(card){

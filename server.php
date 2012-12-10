@@ -54,7 +54,8 @@ class WonderServer implements IWebSocketServerObserver{
             $user->setConnection($conn);
             $user->send('myname',
                         array('name' => $user->name(),
-                              'id'   => $user->id()));
+                              'id'   => $user->id(),
+                              'ingame' => $user->game() != null));
 
             if ($user->game() != null) {
                 if ($user->game()->started)

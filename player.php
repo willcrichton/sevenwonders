@@ -153,7 +153,7 @@ class Player {
         }
     }
 
-    public function sendStartInfo($playerInfo) {
+    public function sendStartInfo($playerInfo, $isRejoin = false) {
         $tojson = function($a) { return $a->json(); };
         $wonderInfo = array("name" => $this->wonderName,
                             "stage" => $this->wonderStage);
@@ -169,13 +169,14 @@ class Player {
                                  'right' => $this->rightPlayer->id()),
             'leftcards' => array_map($tojson, $this->leftPlayer->cardsPlayed),
             'rightcards' => array_map($tojson, $this->rightPlayer->cardsPlayed),
-            'played' => array_map($tojson, $this->cardsPlayed)
+            'played' => array_map($tojson, $this->cardsPlayed),
+            'rejoin' => $isRejoin
         );
         $this->send("startinfo", $startInfo);
     }
 
     public function rejoinGame() {
-        $this->sendStartInfo($this->_game->playerInfo);
+        $this->sendStartInfo($this->_game->playerInfo, true);
         $this->sendHand();
     }
 

@@ -57,7 +57,7 @@ h1.disconnect {
 	width: 600px;
 	box-shadow: 1px 1px 5px #444;
 	border-radius: 4px;
-	/*display: none;*/
+	display: none;
 }
 
 	#pregame h1 { 
