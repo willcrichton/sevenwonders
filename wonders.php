@@ -143,9 +143,11 @@ class SevenWonders {
         // execute effects of all played cards
         foreach ($this->players as $player) {
             $data = array();
-            if (!$player->leftPlayer->isTrashing)
+            if (!$player->leftPlayer->isTrashing &&
+                !$player->leftPlayer->isBuildWonder)
                 $data['left'] = $player->leftPlayer->selectedCard->json();
-            if (!$player->rightPlayer->isTrashing)
+            if (!$player->rightPlayer->isTrashing &&
+                !$player->rightPlayer->isBuildWonder)
                 $data['right'] = $player->rightPlayer->selectedCard->json();
             $player->send('cardschosen', $data);
 
