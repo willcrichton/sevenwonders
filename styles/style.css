@@ -168,17 +168,20 @@ h1.disconnect {
 		left: 50%;
 		margin-left: -400px;
 		z-index: 3000;
+		overflow: hidden;
+		border-top-left-radius: 5px;
+		border-top-right-radius: 5px;
 		/*background: url(wonder.png) no-repeat center center;*/
 	}
 
-		#wonder .highlight {
+		#wonder .check {
 			position: absolute;
-			height: 110px;
-			width: 210px;
-			-webkit-border-radius: 17px;
-			-moz-border-radius: 17px;
-			box-shadow: 0 0 50px #E6ED64;
-			top: 159px;
+			width: 50px;
+			height: 50px;
+			border: 3px solid #85765A;
+			border-radius: 60px;
+			background: rgba(196, 187, 172, 0.7) url(../images/tokens/check.png) no-repeat center center;
+			top: 165px;
 		}
 
 		#wonder #coins {
@@ -405,7 +408,7 @@ h1.disconnect {
             background: #EBDAC0;
             position: absolute;
             bottom: 5px;
-            height: 65px;
+            height: 0;
             display: none;
             padding: 5px 10px;
             width: 153px;

@@ -7,12 +7,14 @@ var SevenWonders = function(socket, args){
     this.leftPlayed = {};
     this.rightPlayed = {};
     this.trashing = false;
+    this.buildingWonder = false;
     this.neighbors = args.neighbors;
-    this.wonderSide = args.wonderside;
+    this.wonderSide = args.wonderside || 'a';
+    this.wonderStage = 1;
     this.colorOrder = ['brown', 'grey', 'yellow', 'red', 'green', 'purple', 'blue'];
     this.cardWidth = 123;
     this.cardHeight = 190;
-    
+
     // select wonder image here (load in appropriately)
     var self = this;
     if(typeof args.wonder.resource == 'undefined'){ // hacky way of checking if player refreshed in middle of wonder picking 
@@ -22,7 +24,7 @@ var SevenWonders = function(socket, args){
         $('#setup').append('<img src="' + imgname + 'A.png" /><img src="' + imgname + 'B.png" />')
         $('#setup img').click(function(){
             var isA = $(this).attr('src').indexOf('A') > -1;
-            self.wonderSide = isA ? 'A' : 'B';
+            self.wonderSide = isA ? 'a' : 'b';
             $('#wonder').css('background', 'url(images/wonders/' + self.wonder.name.toLowerCase() + self.wonderSide + '.png) no-repeat center center');
             self.send(isA, 'wonderside');
             $('#setup-container').fadeOut(200, function(){
@@ -135,6 +137,24 @@ SevenWonders.prototype = {
                 bottom: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
                 opacity: 0,
             }, 500, function(){ $(this).remove(); });
+            return;
+        } else if(this.buildingWonder){
+            this.buildingWonder = false;
+            card.animate({
+                // animate to board where wonder is                   
+            }).fadeOut(200);
+            var check = $('<div class="check stage' + this.wonderStage + '"></div>');
+            $('#wonder').append(check);
+            var offset = 48 + 240 * (this.wonderStage - 1);
+            if(this.wonder.name == "gizah" && this.wonderSide == 'b'){
+                offset = this.wonderStage == 1 ? 3 : 208 * (this.wonderStage - 1);
+            } else if(this.wonder.name == "rhodos" && this.wonderSide == 'b'){
+                offset = 283 + 240 * (this.wonderStage - 1);
+            }
+            check.css('left', offset);
+            check.fadeIn(200);
+
+            this.wonderStage++;
             return;
         }
 
@@ -278,7 +298,7 @@ SevenWonders.prototype = {
                         }, 200);
                         $(this).removeClass('selected');
                         $('.card:not(.ignore)').animate({ opacity: 1 }, 200);
-                        $('.options').css('display', 'none');
+                        $(this).find('.options, .slider').css('display', 'none');
                     } else {
                         $('.card.selected').css('z-index', 1);
                         $('.card.selected').each(function(){
@@ -304,6 +324,11 @@ SevenWonders.prototype = {
                         }, 200, function(){
                             $(this).find('.options').fadeIn(200);
                             $(this).css('z-index', 2);
+                            var slider = $(this).find('.slider');
+                            if(slider.height() > 0){
+                                slider.css({height: 0, display: 'block'});
+                                slider.animate({height: 65}, 200);
+                            }
                         });
                     }
                 });
@@ -321,6 +346,7 @@ SevenWonders.prototype = {
                     card.addClass('highlighted');
                     self.send([card.find('h1').html(), 'trash'], 'cardplay');
                     self.trashing = true;
+                    self.buildingWonder
 
                     card.find('.options a:not(.play)').animate({opacity: 0}, 200)
                                                       .css('visibility', 'hidden');
@@ -339,17 +365,19 @@ SevenWonders.prototype = {
                         self.send('', 'cardignore');
                     } else {
                         var opts = {value: card.find('h1').html(), type: 'card'};
+                        self.trashing = false;
+                        self.buildingWonder = false;
                         self.send(opts, 'checkresources');
                     }
-                    self.trashing = false;
                     return false;
                 });
 
-                $('.wonder').click(function (e) {
+                $('.wonder').click(function(e) {
                     var card = $(this).closest('.card');
                     var opts = {value: card.find('h1').html(), type: 'wonder'};
-                    self.send(opts, 'checkresources');
                     self.trashing = false;
+                    self.buildingWonder = true;
+                    self.send(opts, 'checkresources');
                     return false;
                 });
 
@@ -386,6 +414,7 @@ SevenWonders.prototype = {
                 break;
 
             case 'possibilities':
+                console.log(args.combs);
                 var card = $('.card.selected');
                 if(!args.combs[0]){
                     card.append('<div class="overlay"><h2>Error</h2>It\'s impossible to play this card</div>');
@@ -453,7 +482,9 @@ SevenWonders.prototype = {
                                 var combo = combos[$('.card.selected .slider input[type=range]').attr('value')];
                                 self.resetHighlight();
                                 card.addClass('highlighted');
-                                self.send([card.find('h1').html(), 'play', combo.index], 'cardplay');
+                                self.send([card.find('h1').html(), 
+                                           self.buildingWonder ? 'wonder' : 'play', 
+                                           combo.index], 'cardplay');
                                 card.find('.slider').animate({height: 0}, 200, function(){
                                     $(this).css('display', 'none');
                                 });
