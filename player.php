@@ -3,6 +3,11 @@
 require_once('scoring.php');
 
 class Player {
+    const TRASHING  = 'trashing';
+    const BUYING    = 'buying';
+    const BUILDING  = 'building';
+    const USINGFREE = 'usingfree';
+
     // General player state
     private $_id;
     private $_name;
@@ -25,11 +30,13 @@ class Player {
     public $militaryPoints;
     public $points;
     public $science;
-    public $isTrashing;
-    public $isBuildWonder;
     public $leftPlayer;
     public $rightPlayer;
     public $discounts;
+    public $state;              // one of the constants above (or unset)
+
+    public $canHaveFreeCard;    // state for olympia's free card
+    public $hasFreeCard;
 
     // Figuring out card costs
     private $_lastCostCard;
@@ -70,12 +77,12 @@ class Player {
         $this->points = 0;
         $this->military = new Military();
         $this->science = new Science();
-        $this->isTrashing = false;
-        $this->isBuildWonder = false;
         $this->wonderStage = 0;
         $this->leftPlayer = null;
         $this->rightPlayer = null;
         $this->discounts = array('left' => array(), 'right' => array());
+        $this->canHaveFreeCard = false;
+        $this->hasFreeCard = false;
     }
 
     public function game() {
@@ -173,6 +180,8 @@ class Player {
             'rejoin' => $isRejoin
         );
         $this->send("startinfo", $startInfo);
+        if ($this->hasFreeCard)
+            $this->getFreeCard();
     }
 
     public function rejoinGame() {
@@ -281,6 +290,7 @@ class Player {
 
         switch ($stage['custom']) {
             case '1free':    // olympia's 1 free card per age
+                $this->getFreeCard();
                 break;
             case 'guild':    // olympia's steal a guild at the end of the game
                 break;
@@ -299,5 +309,20 @@ class Player {
                 $this->addDiscount('right', $resource);
                 break;
         }
+    }
+
+    public function getFreeCard() {
+        $this->canHaveFreeCard = true;
+        $this->hasFreeCard = true;
+        $this->send('freecard', array('hasfree' => true));
+    }
+
+    public function useFreeCard() {
+        $this->hasFreeCard = false;
+        $this->send('freecard', array('hasfree' => false));
+    }
+
+    public function isPlayingCard() {
+        return $this->state == self::BUYING || $this->state == self::USINGFREE;
     }
 }
