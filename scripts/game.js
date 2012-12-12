@@ -67,7 +67,7 @@ SevenWonders.prototype = {
         var count = trashCards.length+200;
         var selectCardWidth = 123;
         var selectCardHeight = 190;
-        
+
         $("#cardselect").css({width: $('#game').width()-100, height: $('#game').height()-100});
         $('#cardselect').fadeIn(1000);
         $('#cardwindow').delay(500).fadeIn(1500);
@@ -75,14 +75,11 @@ SevenWonders.prototype = {
         for(i in trashCards){
             var card = trashCards[i];
             var carddiv = this.cardDiv(count, card);
+            var numInColor = 0;
             $('#cardwindow').prepend(carddiv);
             carddiv.data('cardInfo', card);
-            count--;
-            var infoPos = $('#cardwindow').position();
-            console.log(carddiv.data('cardInfo'));
             var cardColor = carddiv.data('cardInfo').color;
             var index = this.colorOrder.indexOf(cardColor);
-            var numInColor = 0;
             for(i in this.trashCardsDisplayed)
                 if(this.trashCardsDisplayed[i].data('cardInfo').color == cardColor) numInColor++; 
             carddiv.find('.options, h1').css('display', 'none');
@@ -93,27 +90,33 @@ SevenWonders.prototype = {
                 'width': selectCardWidth,
                 'height': selectCardHeight});
             carddiv.hover(function(){
-                newHoverCardDiv = $('#'+this.id).clone();
-                hoverCardDiv.remove();
-                $('#hovercardwindow').prepend(newHoverCardDiv)
-                hoverCardDiv = newHoverCardDiv;
+                hoverCardDiv.find('img').attr('src',$(this).find('img').attr('src'));
                 hoverCardDiv.addClass('hovercard');
-                hoverCardDiv.find('h1').css('display', 'block');
+                hoverCardDiv.find('.options, h1').css('display', 'block');
             });
             this.trashCardsDisplayed.push(carddiv);
+            count--;
         }
+        console.log('code is called');
         var hoverCardDiv = this.cardDiv(199,trashCards[0]);
         $('#hovercardwindow').prepend(hoverCardDiv);
         hoverCardDiv.data('cardInfo',trashCards[0]);
         hoverCardDiv.addClass('hovercard');
+        hoverCardDiv.find('.options, h1').css('display', 'block');
+        this.trashCardsDisplayed.push(hoverCardDiv);
+        $('.hovercard .options .play').click(function(e){
+            console.log('hi!');
+            return false;
+        });
     },
 
     rmselectcards: function(){
         $('#cardwindow').fadeOut(1000);
         $('#cardselect').delay(500).fadeOut(1000, 
+        var self = this;
             function(){
-                for(i in this.trashCardsDisplayed){
-                    this.trashCardsDisplayed[i].remove();
+                for(i in self.trashCardsDisplayed){
+                    self.trashCardsDisplayed[i].remove();
                 }
             });
         this.trashCardsDisplayed = [];
@@ -400,7 +403,6 @@ SevenWonders.prototype = {
                         self.send(opts, 'checkresources');
                     }
                     self.trashing = false;
-                    return false;
                 });
 
                 $('.wonder').click(function (e) {

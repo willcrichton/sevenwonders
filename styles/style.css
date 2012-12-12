@@ -522,13 +522,24 @@ h1.disconnect {
                 margin-left: 1120px;
             }
 
-	        .hovercard {
+	        .card.hovercard {
 	        	position: relative;
 	        	z-index: 2000;
 	        	margin: auto;
-	        	left: 0!important;
+	        	left: 0;
 	        	top: 25px;
-	        	width: 170px!important;
-	        	height: 265px!important;
+	        	width: 170px;
+	        	height: 265px;
 	        	opacity: 1;
 	        }
+
+	        .hovercard .trash, .hovercard .wonder{
+	        	visibility: hidden;
+	        }
+
+	        .card .options .discardPlay {
+                background-image: url(../images/tokens/card.png);
+                width: 65px;
+                height: 65px;
+                margin-top: 0;
+            }
