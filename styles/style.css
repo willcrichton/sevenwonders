@@ -12,7 +12,7 @@
 
 * { margin: 0; padding: 0; }
 
-body { 
+body {
 	background: #E7E3D3 url(../images/paper.jpg) no-repeat center top;
 	/*overflow: hidden;*/
 	font-family: 'Georgia', 'Helvetica', Arial, sans-serif;
@@ -45,9 +45,9 @@ h1.disconnect {
 	}
 
 #container {
-	margin: 0 auto; 
+	margin: 0 auto;
 	width: 1200px;
-	margin-top: 20px; 
+	margin-top: 20px;
 }
 
 #pregame {
@@ -60,7 +60,7 @@ h1.disconnect {
 	display: none;
 }
 
-	#pregame h1 { 
+	#pregame h1 {
 		text-align: center;
 		/*margin-bottom: 20px;
 		text-shadow: 0px 2px 3px #aaa;*/
@@ -101,8 +101,8 @@ h1.disconnect {
 	}
 
 	#lobby input[type=range] {
-		position: relative; 
-		top: 3px; 
+		position: relative;
+		top: 3px;
 		margin-right: 3px;
 	}
 
@@ -116,7 +116,7 @@ h1.disconnect {
 		padding-left: 20px;
 	}
 
-#game { 
+#game {
 	display: none;
 	overflow: auto;
 	width: 1200px;
@@ -187,7 +187,7 @@ h1.disconnect {
 		#wonder #coins {
 			position: absolute;
 			top: 35px;
-			left: 220px; 
+			left: 220px;
 			width: 460px;
 		}
 
@@ -215,7 +215,7 @@ h1.disconnect {
 			border: 1px solid black;
 			width: 140px;
 			height: 150px;
-			left: -167px; 
+			left: -167px;
 			position: absolute;
 			bottom: 5px;
 			background: #F2F0E6;
@@ -234,7 +234,7 @@ h1.disconnect {
 			#resources .button-wrapper, #resourceSelect .button-wrapper {
 				position: absolute;
 				bottom: 5px;
-				left: 5px;	
+				left: 5px;
 				padding: 4px;
 				width: 130px;
 			}
@@ -372,25 +372,25 @@ h1.disconnect {
 		}
 
 			.card .overlay h2 {
-				color: #a00; 
+				color: #a00;
 				font-weight: bold;
 				text-shadow: 0 0 0;
 				font-size: 18px;
 				margin-top: -20px;
 			}
 
-		.card.selected { 
+		.card.selected {
 			bottom: 25px;
 			z-index: 10000!important;
 		}
 
 		.card.highlighted {
-			background: #ffffaa; 
+			background: #ffffaa;
 		}
 
-		.card h1 { 
-			text-align: center; 
-			font-size: 15px; 
+		.card h1 {
+			text-align: center;
+			font-size: 15px;
 			position: absolute;
 			top: -20px;
 			width: 100%;
