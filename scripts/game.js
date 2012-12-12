@@ -14,7 +14,7 @@ var SevenWonders = function(socket, args){
     this.colorOrder = ['brown', 'grey', 'yellow', 'red', 'green', 'purple', 'blue'];
     this.cardWidth = 123;
     this.cardHeight = 190;
-    this.hasfree = true; // has a free card from olympia's wonder
+    this.hasfree = false; // has a free card from olympia's wonder
 
     // select wonder image here (load in appropriately)
     var self = this;
@@ -35,9 +35,10 @@ var SevenWonders = function(socket, args){
         })
     }
 
+    this.updateCoins();
+
     if(args.rejoin == true){
         $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + this.wonderSide + '.png) no-repeat center center');
-        this.updateCoins();
         this.updateMilitary(args.military);
         var i;
         for (i = 0; i < args.leftcards.length; i++)
@@ -258,6 +259,8 @@ SevenWonders.prototype = {
         var type = 'play';
         if (this.trashing)
             type = 'trash';
+        else if (index == -1)
+            type = 'free';
         else if (this.buildingWonder)
             type = 'wonder';
         this.send([card.find('h1').html(), type, index], 'cardplay');
@@ -429,11 +432,6 @@ SevenWonders.prototype = {
 
             case 'possibilities':
                 var showfree = this.hasfree && !this.buildingWonder;
-                if (showfree)
-                    args.combs = [
-                        {'self': 0, left: 0, right: 2},
-                        {'self': 0, left: 2, right: 0},
-                    ];
                 var card = $('.card.selected');
 
                 // If this is impossible to play, throw up a message saying so
@@ -457,12 +455,14 @@ SevenWonders.prototype = {
                 var minCost = 100;
                 for (var i in args.combs) {
                     var combo = args.combs[i];
-                    var cost = combo.left + combo.right;
+                    var cost = 0;
+                    if (typeof combo.left != 'undefined')
+                        cost = combo.left + combo.right;
                     if(cost < minCost) minCost = cost;
                 }
 
                 // If it's a free card, then we just chose it
-                if (minCost == 0 || typeof args.combs[0].left == "undefined") {
+                if (minCost == 0) {
                     this.resetHighlight();
                     $('.card:not(.ignore)').removeClass('highlighted');
                     this.chooseCard(card, 0);
@@ -500,20 +500,22 @@ SevenWonders.prototype = {
                 card.find(hidden).animate({opacity: 0}, 200, function() {
                     $(this).css('visibility', 'hidden');
                 });
-                slider.find('.left').html(combos[firstMin].left);
-                slider.find('.right').html(combos[firstMin].right);
-                slider.find('input[type=range]').attr('max', combos.length - 1)
-                                                .attr('value', firstMin);
-                slider.click(function(e){ e.stopPropagation(); })
-                    .css({'height': '0', display: 'block'})
-                    .animate({
-                        height: 65
-                    }, 200);
-                card.find('input[type=range]').change(function(){
-                    var val = $(this).attr('value');
-                    slider.find('.left').html(combos[val].left);
-                    slider.find('.right').html(combos[val].right);
-                });
+                if (combos.length > 0) {
+                    slider.find('.left').html(combos[firstMin].left);
+                    slider.find('.right').html(combos[firstMin].right);
+                    slider.find('input[type=range]').attr('max', combos.length - 1)
+                                                    .attr('value', firstMin);
+                    slider.click(function(e){ e.stopPropagation(); })
+                        .css({'height': '0', display: 'block'})
+                        .animate({
+                            height: 65
+                        }, 200);
+                    card.find('input[type=range]').change(function(){
+                        var val = $(this).attr('value');
+                        slider.find('.left').html(combos[val].left);
+                        slider.find('.right').html(combos[val].right);
+                    });
+                }
 
                 var self = this;
                 if (combos.length > 0) {
@@ -523,7 +525,7 @@ SevenWonders.prototype = {
                                .unbind('click')
                                .click(function(e){
                                    e.stopPropagation();
-                                   var combo = combos[$('.card.selected .slider input[type=range]').attr('value')];
+                                   var combo = combos[slider.find('input[type=range]').attr('value')];
                                    self.chooseCard(card, combo.index);
                                    card.find('.slider').animate({height: 0}, 200, function(){
                                        $(this).css('display', 'none');
@@ -538,7 +540,10 @@ SevenWonders.prototype = {
                                .animate({opacity: 1}, 200)
                                .unbind('click')
                                .click(function(e){
-                                   console.log('here');
+                                   self.chooseCard(card, -1);
+                                   card.find('.slider').animate({height: 0}, 200, function(){
+                                       $(this).css('display', 'none');
+                                   });
                                    return false;
                                });
                     });
@@ -552,7 +557,11 @@ SevenWonders.prototype = {
                 }   else {
                     alert(args.data)
                 }
-            break;
+                break;
+
+            case 'freecard':
+                this.hasfree = args.hasfree;
+                break;
 
             default:
                 console.log(args, msg);

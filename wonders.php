@@ -144,26 +144,39 @@ class SevenWonders {
         // execute effects of all played cards
         foreach ($this->players as $player) {
             $data = array();
-            if (!$player->leftPlayer->isTrashing &&
-                !$player->leftPlayer->isBuildWonder)
+            if ($player->leftPlayer->isPlayingCard())
                 $data['left'] = $player->leftPlayer->selectedCard->json();
-            if (!$player->rightPlayer->isTrashing &&
-                !$player->rightPlayer->isBuildWonder)
+            if ($player->rightPlayer->isPlayingCard())
                 $data['right'] = $player->rightPlayer->selectedCard->json();
             $player->send('cardschosen', $data);
 
             $card = $player->selectedCard;
-            if ($player->isTrashing) {
-                $this->log("{$player->info()} trashing " . $card->getName());
-                $player->addCoins(3);
-            } elseif ($player->isBuildWonder == true) {
-                $this->log("{$player->info()} wondering " . $card->getName());
-                $player->playWonderStage();
-            } else {
-                $this->log("{$player->info()}) playing " . $card->getName());
-                $card->play($player);
-                $player->cardsPlayed[] = $card;
-                $player->addCoins(-1 * $card->getMoneyCost());
+            switch ($player->state) {
+                case Player::TRASHING:
+                    $this->log("{$player->info()} trash {$card->getName()}");
+                    $player->addCoins(3);
+                    break;
+
+                case Player::BUYING:
+                    $this->log("{$player->info()}) play {$card->getName()}");
+                    $card->play($player);
+                    $player->cardsPlayed[] = $card;
+                    $player->addCoins(-1 * $card->getMoneyCost());
+                    break;
+
+                case Player::BUILDING:
+                    $this->log("{$player->info()} wonder {$card->getName()}");
+                    $player->playWonderStage();
+                    break;
+
+                case Player::USINGFREE:
+                    $player->useFreeCard();
+                    $card->play($player);
+                    $player->cardsPlayed[] = $card;
+                    break;
+
+                default:
+                    throw new Error("unimplemented play state");
             }
 
             if (isset($player->pendingCost)) {
@@ -181,10 +194,9 @@ class SevenWonders {
         }
 
         foreach ($this->players as $player) {
-            if ($player->isTrashing)
+            if ($player->state == Player::TRASHING)
                 $this->discard[] = $player->selectedCard;
-            $player->isTrashing = false;
-            $player->isBuildWonder = false;
+            unset($player->state);
             unset($player->selectedCard);
             unset($player->pendingCost);
 
@@ -200,6 +212,9 @@ class SevenWonders {
             $this->log("Evaluating military");
             foreach ($this->players as $player) {
                 $player->evaluateMilitary($this->age);
+
+                if ($player->canHaveFreeCard)
+                    $player->getFreeCard();
             }
 
             $this->age++;
@@ -219,25 +234,38 @@ class SevenWonders {
 
     public function onMessage(Player $user, $args){
         switch($args['messageType']){
+            case 'cardignore':
             case 'cardplay':
+                unset($user->state);
+                unset($user->selectedCard);
+                unset($user->pendingCost);
+                unset($this->cardsChosen[$user->id()]);
+
+                if ($args['messageType'] == 'cardignore')
+                    break;
+
                 $cardName = $args['value'][0];
                 // match what they sent with a Card object
-                foreach ($user->hand as $card) {
-                    if($card->getName() == $cardName) $foundCard = $card;
-                }
+                foreach ($user->hand as $card)
+                    if($card->getName() == $cardName)
+                        $foundCard = $card;
                 if (!isset($foundCard)) // don't have the specified card
                     break;
 
                 if ($args['value'][1] == 'trash') {
-                    unset($user->pendingCost);
-                    $user->isTrashing = true;
-                    $user->isBuildWonder = false;
+                    $user->state = Player::TRASHING;
+                } else if ($args['value'][1] == 'free') {
+                    if (!$user->hasFreeCard)
+                        break;
+                    $user->state = Player::USINGFREE;
                 } else {
                     $cost = $user->cardCost($foundCard, $args['value'][2]);
                     if ($cost === false)
                         break;
-                    $user->isTrashing = false;
-                    $user->isBuildWonder = ($args['value'][1] == 'wonder');
+                    if ($args['value'][1] == 'wonder')
+                        $user->state = Player::BUILDING;
+                    else
+                        $user->state = Player::BUYING;
                     $user->pendingCost = $cost;
                 }
                 $this->log("{$user->info()} chose {$foundCard->getName()}");
@@ -247,13 +275,6 @@ class SevenWonders {
                 if (count($this->cardsChosen) == count($this->players)) {
                     $this->playCards();
                 }
-                break;
-
-            case 'cardignore':
-                $user->isTrashing = false;
-                unset($user->selectedCard);
-                unset($user->pendingCost);
-                unset($this->cardsChosen[$user->id()]);
                 break;
 
             case 'checkresources':
