@@ -243,7 +243,6 @@ class SevenWonders {
                 $this->log("{$user->info()} chose {$foundCard->getName()}");
                 $this->cardsChosen[$user->id()] = $foundCard;
                 $user->selectedCard = $foundCard;
-                $user->send('canplay', '');
                 // if everyone's played a card, execute cards and redeal/new turn
                 if (count($this->cardsChosen) == count($this->players)) {
                     $this->playCards();

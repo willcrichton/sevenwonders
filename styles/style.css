@@ -473,9 +473,21 @@ bottom: 25px;
     margin-top: 0;
 }
 
+.card .options a.buy {
+    background-image: url(../images/tokens/buy.png) !important;
+}
+
+.card .options a.no {
+    background-image: url(../images/tokens/no.png) !important;
+}
+
 .card .options a.wonder {
     margin-right: 0;
     background-image: url(../images/tokens/pyramid.png);
+}
+
+.card .options a.free {
+    background-image: url(../images/tokens/free.png) !important;
 }
 
 .card:first-child {
