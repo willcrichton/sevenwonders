@@ -85,7 +85,7 @@
             var my_id = localStorage.sevenwonders_id || '';
             var my_name = "Guest";
             var status = "lobby";
-            var game = undefined;
+            game = undefined; //Currently Global for testing purposes
             $(document).ready(function(){
                 $("#game").css({width: Math.max($(window).width(), 1420), height: Math.max($(window).height(), 730)});
                 var host = "ws://" + window.location.hostname + ":12345";

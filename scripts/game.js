@@ -4,6 +4,7 @@ var SevenWonders = function(socket, args){
     this.coins = parseInt(args.coins);
     this.socket = socket;
     this.cardsPlayed = [];
+    this.trashCardsDisplayed = [];
     this.leftPlayed = {};
     this.rightPlayed = {};
     this.trashing = false;
@@ -62,15 +63,14 @@ SevenWonders.prototype = {
     },
 
     selectcards: function(){
+        var trashCards = [{name: 'Altar', color: 'blue'},{name:'Stockade', color: 'red'},{name: 'Glassworks', color: 'grey'},{name: 'Clay Pool', color: 'brown'},{name: 'Tavern', color: 'yellow'},{name: 'School', color: 'green'},{name: 'Scientists Guild', color: 'purple'},{name: 'Forest Cave', color: 'brown'},{name: 'Loom', color: 'grey'}];
+        var count = trashCards.length+200;
+        var selectCardWidth = 123;
+        var selectCardHeight = 190;
+        
         $("#cardselect").css({width: $('#game').width()-100, height: $('#game').height()-100});
         $('#cardselect').fadeIn(1000);
         $('#cardwindow').delay(500).fadeIn(1500);
-
-        var cardsDisplayed = [];
-        var trashCards = [{name: 'Altar', color: 'blue'},{name:'Stockade', color: 'red'},{name: 'Glassworks', color: 'grey'},{name: 'Clay Pool', color: 'brown'},{name: 'Tavern', color: 'yellow'},{name: 'School', color: 'green'},{name: 'Scientists Guild', color: 'purple'},{name: 'Forest Cave', color: 'brown'},{name: 'Loom', color: 'grey'}];
-        var count = trashCards.length;
-        var selectCardWidth = 123;
-        var selectCardHeight = 190;
 
         for(i in trashCards){
             var card = trashCards[i];
@@ -81,22 +81,42 @@ SevenWonders.prototype = {
             var infoPos = $('#cardwindow').position();
             console.log(carddiv.data('cardInfo'));
             var cardColor = carddiv.data('cardInfo').color;
-            var index = colorOrder.indexOf(cardColor);
+            var index = this.colorOrder.indexOf(cardColor);
             var numInColor = 0;
-            for(i in cardsDisplayed)
-                if(cardsDisplayed[i].data('cardInfo').color == cardColor) numInColor++; 
-
+            for(i in this.trashCardsDisplayed)
+                if(this.trashCardsDisplayed[i].data('cardInfo').color == cardColor) numInColor++; 
             carddiv.find('.options, h1').css('display', 'none');
-            carddiv.css('z-index', 2000 - numInColor);
-            carddiv.animate({
-                left: infoPos.left + 60 + index * 138,
-                bottom: $('#cardselect').height() - 640 - infoPos.top + numInColor * 40,
-                width: selectCardWidth,
-                height: selectCardHeight,
-                opacity: 1
-            },200)              
-            cardsDisplayed.push(carddiv);
+            carddiv.css({
+                'z-index': 2000 - numInColor,
+                'left': 10 + index * 138,
+                'bottom': 10 + numInColor * 40,
+                'width': selectCardWidth,
+                'height': selectCardHeight});
+            carddiv.hover(function(){
+                newHoverCardDiv = $('#'+this.id).clone();
+                hoverCardDiv.remove();
+                $('#hovercardwindow').prepend(newHoverCardDiv)
+                hoverCardDiv = newHoverCardDiv;
+                hoverCardDiv.addClass('hovercard');
+                hoverCardDiv.find('h1').css('display', 'block');
+            });
+            this.trashCardsDisplayed.push(carddiv);
         }
+        var hoverCardDiv = this.cardDiv(199,trashCards[0]);
+        $('#hovercardwindow').prepend(hoverCardDiv);
+        hoverCardDiv.data('cardInfo',trashCards[0]);
+        hoverCardDiv.addClass('hovercard');
+    },
+
+    rmselectcards: function(){
+        $('#cardwindow').fadeOut(1000);
+        $('#cardselect').delay(500).fadeOut(1000, 
+            function(){
+                for(i in this.trashCardsDisplayed){
+                    this.trashCardsDisplayed[i].remove();
+                }
+            });
+        this.trashCardsDisplayed = [];
     },
 
     updateCoins: function() {

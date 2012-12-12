@@ -480,9 +480,9 @@ h1.disconnect {
                 background-image: url(../images/tokens/pyramid.png);
             }
 
-		.card:first-child {
+		/*.card:first-child {
 			margin-left: 0!important;
-		}
+		}*/
 
 		#resource_wrapper {
 			width: 100px;
@@ -509,13 +509,26 @@ h1.disconnect {
         padding: 50px;
     }
         #cardwindow {
+        	position: relative;
             display: none;
+            margin: 0 auto;
             background-color: #CCB280;
             height: 100%;
-            width: 100%;
+            width: 1320px;
         }
             #hovercardwindow {
                 background-color: #FFFFFF;
                 height: 100%;
                 margin-left: 1120px;
             }
+
+	        .hovercard {
+	        	position: relative;
+	        	z-index: 2000;
+	        	margin: auto;
+	        	left: 0!important;
+	        	top: 25px;
+	        	width: 170px!important;
+	        	height: 265px!important;
+	        	opacity: 1;
+	        }
