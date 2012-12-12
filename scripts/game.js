@@ -517,27 +517,31 @@ SevenWonders.prototype = {
 
                 var self = this;
                 if (combos.length > 0) {
-                    card.find('.play')
-                        .addClass('buy')
-                        .unbind('click')
-                        .click(function(e){
-                            e.stopPropagation();
-                            var combo = combos[$('.card.selected .slider input[type=range]').attr('value')];
-                            self.chooseCard(card, combo.index);
-                            card.find('.slider').animate({height: 0}, 200, function(){
-                                $(this).css('display', 'none');
-                            });
-                            return false;
-                        });
+                    card.find('.play').animate({opacity: 0}, 200, function() {
+                        $(this).addClass('buy')
+                               .animate({opacity: 1}, 200)
+                               .unbind('click')
+                               .click(function(e){
+                                   e.stopPropagation();
+                                   var combo = combos[$('.card.selected .slider input[type=range]').attr('value')];
+                                   self.chooseCard(card, combo.index);
+                                   card.find('.slider').animate({height: 0}, 200, function(){
+                                       $(this).css('display', 'none');
+                                   });
+                                   return false;
+                               });
+                    });
                 }
                 if (showfree) {
-                    card.find('.wonder')
-                        .addClass('free')
-                        .unbind('click')
-                        .click(function(e){
-                            console.log('here');
-                            return false;
-                        });
+                    card.find('.wonder').animate({opacity: 0}, 200, function() {
+                        $(this).addClass('free')
+                               .animate({opacity: 1}, 200)
+                               .unbind('click')
+                               .click(function(e){
+                                   console.log('here');
+                                   return false;
+                               });
+                    });
                 }
                 break;
 
