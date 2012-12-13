@@ -220,8 +220,9 @@ SevenWonders.prototype = {
             old.removeClass('highlighted');
             old.find('.options a').css('visibility', 'visible')
                                   .animate({opacity: 1}, 200);
-            old.find('.play').removeClass('buy');
+            old.find('.play').removeClass('buy no');
             old.find('.wonder').removeClass('free');
+            this.resetCard(old);
         }
     },
 
@@ -239,6 +240,7 @@ SevenWonders.prototype = {
             self.trashing = false;
             self.buildingWonder = false;
             self.send(opts, 'checkresources');
+            self.resetHighlight();
             return false;
         });
 
@@ -247,6 +249,7 @@ SevenWonders.prototype = {
             self.trashing = false;
             self.buildingWonder = true;
             self.send(opts, 'checkresources');
+            self.resetHighlight();
             return false;
         });
 
@@ -255,6 +258,7 @@ SevenWonders.prototype = {
     },
 
     chooseCard: function(card, index) {
+        this.resetHighlight();
         card.addClass('highlighted');
         var type = 'play';
         if (this.trashing)
@@ -463,8 +467,6 @@ SevenWonders.prototype = {
 
                 // If it's a free card, then we just chose it
                 if (minCost == 0) {
-                    this.resetHighlight();
-                    $('.card:not(.ignore)').removeClass('highlighted');
                     this.chooseCard(card, 0);
                     return;
                 }
