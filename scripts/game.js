@@ -242,7 +242,7 @@ SevenWonders.prototype = {
         });
 
         card.find('.play').unbind('click').click(function(e){
-            var opts = {value: card.find('h1').html(), type: 'card'};
+            var opts = {value: card.find('h1').html(), type: 'play'};
             card.data('state', 'playing');
             self.send(opts, 'checkresources');
             self.resetHighlight();

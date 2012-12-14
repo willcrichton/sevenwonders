@@ -212,14 +212,15 @@ class Player {
 
         // Save off what we just calculated so we can verify a cost strategy
         // when one is provided when playing the card
-        $this->possibilities[$card->getName()] = $possibilities;
+        $this->possibilities[$card->getName()] =
+            array('combs' => $possibilities, 'type' => $type);
 
         // Send off everything we just found
         $this->send('possibilities', array('combs' => $possibilities));
     }
 
     private function calculateCost(WonderCard $card, $type) {
-        if ($type == 'card') {
+        if ($type == 'play') {
             // check for duplicates
             foreach ($this->cardsPlayed as $cardPlayed)
                 if ($cardPlayed->getName() == $card->getName())
@@ -266,17 +267,17 @@ class Player {
         return $possible;
     }
 
-    public function cardCost(WonderCard $card, $selection){
+    public function cardCost(WonderCard $card, $selection, $type){
         // Make sure we've pre-calculated the cost of this card and that the
         // specified selection is in bounds
         if (!isset($this->possibilities[$card->getName()]))
             return false;
         $arr = $this->possibilities[$card->getName()];
-        if (!isset($arr[$selection]))
+        if (!isset($arr['combs'][$selection]) || $arr['type'] != $type)
             return false;
 
         unset($this->possibilities[$card->getName()]);
-        return $arr[$selection];
+        return $arr['combs'][$selection];
     }
 
     public function playWonderStage() {

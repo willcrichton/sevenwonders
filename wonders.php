@@ -247,7 +247,8 @@ class SevenWonders {
                         break;
                     $state = Player::USINGFREE;
                 } else {
-                    $cost = $user->cardCost($foundCard, $args['value'][2]);
+                    $cost = $user->cardCost($foundCard, $args['value'][2],
+                                            $args['value'][1]);
                     if ($cost === false)
                         break;
                     if ($args['value'][1] == 'wonder')
