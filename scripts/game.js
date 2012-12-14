@@ -36,6 +36,7 @@ var SevenWonders = function(socket, args){
 
     this.updateCoins();
 
+    // Puts cards back in their place if player is rejoining the game (e.g. refreshing)
     if(args.rejoin == true){
         $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + this.wonderSide + '.png) no-repeat center center');
         this.updateMilitary(args.military);
@@ -58,16 +59,19 @@ var SevenWonders = function(socket, args){
 
 SevenWonders.prototype = {
 
+    // Send a packet of information to the server via the WebSocket
     send: function(opts, type){
         opts = (typeof opts == "object" && !(opts instanceof Array)) ? opts : {value: opts};
         opts.messageType = type;
         this.socket.send(JSON.stringify(opts));
     },
 
+    // Creates an img element from a full name of a card
     cardImageFromName: function(name){
         return '<img src="images/cards/' + name.toLowerCase().replace(/ /g, "") + '.png" />';
     },
 
+    // Puts the coin images on the board
     updateCoins: function() {
         var golds = Math.floor(this.coins / 3);
         var silvers = this.coins % 3;
@@ -88,6 +92,7 @@ SevenWonders.prototype = {
         }
     },
 
+    // Puts the coin tokens on the board
     updateMilitary: function(args) {
         $('#military').html('');
         var points = {1 : 'victory1', 3: 'victory3', 5: 'victory5'};
@@ -104,6 +109,7 @@ SevenWonders.prototype = {
         }
     },
 
+    // Inserts cards into the appropriate position on the left or right columns
     updateColumn: function(side, color, img, speed) {
         img = $('<div class="card ignore played">' + img + '</div>');
         var cardsPlayed = side == 'left' ? this.leftPlayed : this.rightPlayed;
@@ -112,6 +118,7 @@ SevenWonders.prototype = {
         img.appendTo('.neighbor.' + side);
         var bottom = -160;
         var lastIndex = 0;
+        // Find the position relative to current # of cards
         for(var i = this.colorOrder.indexOf(color); i >= 0; i--){
             var col = this.colorOrder[i];
             lastIndex = i;
@@ -121,6 +128,7 @@ SevenWonders.prototype = {
                 break;
             }
         }
+        // Push up all cards above the one we're inserting
         for(var j = lastIndex + 1; j < this.colorOrder.length; j++){
             for(cIndex in cardsPlayed[this.colorOrder[j]]){
                 var card_move = $(cardsPlayed[this.colorOrder[j]][cIndex]);
@@ -133,6 +141,8 @@ SevenWonders.prototype = {
         img.animate({opacity: 1}, speed);
     },
 
+    // Show when a wonder stage has been built (currently use checks instead of the cards)
+    // todo: have some indicator of which cards were used to build wonders
     buildWonderStage: function() {
         var check = $('<div class="check stage' + this.wonderStage + '"></div>');
         $('#wonder').append(check);
@@ -148,6 +158,7 @@ SevenWonders.prototype = {
         this.wonderStage++;
     },
 
+    // Given a selected card, move it to above the wonder
     moveToBoard: function(card, animate) {
         var state = card.data('state');
         card.data('state', '');
@@ -161,7 +172,7 @@ SevenWonders.prototype = {
             return;
         } else if (state == 'building') {
             card.animate({
-                // animate to board where wonder is
+                // todo: animate to board where wonder is
             }).fadeOut(200);
             this.buildWonderStage();
             return;
@@ -194,6 +205,7 @@ SevenWonders.prototype = {
         card.removeClass('highlighted').removeClass('selected');
     },
 
+    // Create a card div with options and slider
     cardDiv: function(idx, card) {
         var div = $('<div class="card" id="card' + idx +'">'+
                      '<h1>' + card.name + '</h1>' +
@@ -213,6 +225,8 @@ SevenWonders.prototype = {
         return div;
     },
 
+    // Highlight = when a card has been chosen for play
+    // resetHighlight = user canceled that action, so ignore it
     resetHighlight: function(){
         var hand = $('.card:not(.played)');
         // If we can play the last two cards, don't actually reset the highlight
@@ -232,6 +246,9 @@ SevenWonders.prototype = {
         }
     },
 
+    // Cards are modified in a number ways and used rather loosely
+    // so resetCard puts a card back in its natural state like it was 
+    // just dealt.
     resetCard: function(card) {
         var self = this;
         card.data('state', '');
@@ -261,6 +278,7 @@ SevenWonders.prototype = {
             .animate({opacity: 1}, 200);
     },
 
+    // Marks a card as set to be played when other players finish playing
     chooseCard: function(card, index) {
         this.resetHighlight();
         card.addClass('highlighted');
@@ -294,6 +312,7 @@ SevenWonders.prototype = {
             });
     },
 
+    // Turns an enlarged card back to normal size
     shrinkCard: function(card){
         card = $(card);
         card.css('z-index', 1);
@@ -484,7 +503,12 @@ SevenWonders.prototype = {
                     }
                     combo.index = i;
                 }
+
+                // Sort the combinations with least $ for left first
                 combos.sort(function(a, b){ return a.left < b.left });
+
+                // find the first element in the array with the minimum cost
+                // this'll be the default combo displayed on the slider
                 var firstMin = 0;
                 for(var i = 0; i < combos.length; i++){
                     if(combos[i].left + combos[i].right == minCost){
@@ -502,28 +526,33 @@ SevenWonders.prototype = {
                 else
                     hidden = '.options a:not(.play)';
 
+                // hide the appropriate options based on wonder and # of combinations
                 card.find(hidden).animate({opacity: 0}, 200, function() {
                     $(this).css('visibility', 'hidden');
                 });
+
+                var self = this;
+                // if the card isn't free (buy combinations exist...)
                 if (combos.length > 0) {
+                    // set the default value to the first minimum we found
                     slider.find('.left').html(combos[firstMin].left);
                     slider.find('.right').html(combos[firstMin].right);
                     slider.find('input[type=range]').attr('max', combos.length - 1)
                                                     .attr('value', firstMin);
+                    // show the slider div
                     slider.click(function(e){ e.stopPropagation(); })
                         .css({'height': '0', display: 'block'})
                         .animate({
                             height: 65
                         }, 200);
+                    // have the slider update the #s to left and right on change
                     card.find('input[type=range]').change(function(){
                         var val = $(this).attr('value');
                         slider.find('.left').html(combos[val].left);
                         slider.find('.right').html(combos[val].right);
                     });
-                }
-
-                var self = this;
-                if (combos.length > 0) {
+         
+                    // Change the play button to a buy button
                     card.find('.play').animate({opacity: 0}, 200, function() {
                         $(this).addClass('buy')
                                .animate({opacity: 1}, 200)
@@ -539,6 +568,8 @@ SevenWonders.prototype = {
                                });
                     });
                 }
+
+                // if the wonder allows us to buy a card for free
                 if (showfree) {
                     card.find('.wonder').animate({opacity: 0}, 200, function() {
                         $(this).addClass('free')
