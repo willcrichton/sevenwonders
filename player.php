@@ -144,13 +144,17 @@ class Player {
         foreach($this->cardsPlayed as $card)
             $total += $card->points($this);
 
+        // if player has guild card stealing wonder
+        // todo: TEST THIS
         if($this->canStealGuild){
+            // caluculate maximum points
             $cards = array_merge($this->leftPlayer->cardsPlayed, 
                                  $this->rightPlayer->cardsPlayed);
             $max = 0;
-            foreach($this->cards as $card)
-                if($card->getColor() == 'purple')
+            foreach($cards as $card){
+                if($card->getColor() == 'purple' or $card->getColor() == 'blue')
                     $max = max($card->points($this), $max);
+            }
 
             $total += $max;
         }
@@ -296,6 +300,7 @@ class Player {
     public function playWonderStage() {
         $stage = $this->wonder['stages'][$this->wonderStage];
         $this->wonderStage++;
+
         // Do all the easy things first
         if (isset($stage['military']))
             $this->military->add($stage['military']);
