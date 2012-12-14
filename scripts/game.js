@@ -15,6 +15,7 @@ var SevenWonders = function(socket, args){
     this.cardWidth = 123;
     this.cardHeight = 190;
     this.hasfree = false; // has a free card from olympia's wonder
+    this.hastwo = false;  // can play second card from babylon's wonder
 
     // select wonder image here (load in appropriately)
     var self = this;
@@ -215,8 +216,15 @@ SevenWonders.prototype = {
     },
 
     resetHighlight: function(){
+        var hand = $('.card:not(.played)');
+        // If we can play the last two cards, don't actually reset the highlight
+        // on the last card
+        if (this.hastwo && hand.length == 2)
+            return;
+
         var old = $('.highlighted');
-        if(old.length > 0){
+        if (old.length > 0) {
+            this.send({card: old.find('h1').text()}, 'cardignore')
             old.removeClass('highlighted');
             old.find('.options a').css('visibility', 'visible')
                                   .animate({opacity: 1}, 200);
@@ -273,23 +281,21 @@ SevenWonders.prototype = {
         card.find('.options a').animate({ opacity: 0 }, 200, function(){
             $(this).removeClass('free buy');
             if ($(this).hasClass('play')) {
-                $(this).addClass('no')
-                       .animate({opacity: 1}, 200)
-                       .unbind('click')
-                       .click(function() {
-                           self.send('', 'cardignore')
-                           $(this).animate({opacity: 0}, 200, function(){
-                               $(this).removeClass('no');
-                               self.resetCard(card);
-                           });
-                           return false;
-                       });
+                $(this).addClass('no').animate({opacity: 1}, 200);
             } else {
-                $(this).animate({opacity: 0}, 200, function() {
-                    $(this).css('visibility', 'hidden');
-                });
+                $(this).css('visibility', 'hidden');
             }
         });
+        card.find('a.play')
+            .unbind('click')
+            .click(function() {
+                $(this).animate({opacity: 0}, 200, function(){
+                    self.resetHighlight();
+                    $(this).removeClass('no');
+                    self.resetCard(card);
+                });
+                return false;
+            });
     },
 
     onMessage: function(args, msg){
@@ -565,9 +571,13 @@ SevenWonders.prototype = {
                 this.hasfree = args.hasfree;
                 break;
 
+            case 'canplay2':
+                this.hastwo = true;
+                break;
+
             default:
                 console.log(args, msg);
-            break;
+                break;
         }
     }
 }
