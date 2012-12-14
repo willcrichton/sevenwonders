@@ -65,16 +65,19 @@ SevenWonders.prototype = {
     },
 
     selectcards: function(){
+        //set up card select window
         $("#cardselect").css({width: $('#game').width()-100, height: $('#game').height()-100});
         $('#cardselect').fadeIn(1000);
         $('#cardwindow').delay(500).fadeIn(1500);
 
+        //initialize variables and dummy data
         var trashCards = $.map(this.cardsPlayed, function(a){return a.data('cardInfo');})
         var count = trashCards.length+200;
         var selectCardWidth = 123;
         var selectCardHeight = 190;
         self = this;
 
+        //loop over all discarded cards, creating JQuery objects and Divs
         for(i in trashCards){
             var card = trashCards[i];
             var carddiv = this.cardDiv(count, card);
@@ -96,6 +99,7 @@ SevenWonders.prototype = {
                 'width': selectCardWidth,
                 'height': selectCardHeight});
 
+            //for each card set up hover and click actions
             carddiv.hover(
                 function(){
                     if(!self.hoverlock || self.hoverlock == 2){
@@ -136,6 +140,7 @@ SevenWonders.prototype = {
             count--;
         }
 
+        //set up initial hover card div
         var hoverCardDiv = this.cardDiv(199,trashCards[0]);
         $('#hovercardwindow').prepend(hoverCardDiv);
         hoverCardDiv.data('cardInfo',trashCards[0]);
@@ -143,6 +148,7 @@ SevenWonders.prototype = {
         hoverCardDiv.find('.options, h1').css('display', 'block');
         this.trashCardsDisplayed.push(hoverCardDiv);
 
+        //bind send function to play button
         $('.hovercard .options .play').click(function(e){
             var card = $(this).closest('.card');
             console.log(card.find('h1').html())
@@ -151,6 +157,7 @@ SevenWonders.prototype = {
             return false;
         });
 
+        //allow for a click anywhere to deselect cards
         $('#cardwindow').click(function(e){
             self.hoverlock = 0
             $(self.currentHoverCard).find('img').css('box-shadow', 'none');
@@ -158,6 +165,7 @@ SevenWonders.prototype = {
     },
 
     rmselectcards: function(){
+        //loop through the array of displayed cards and remove all of them
         var trash = this.trashCardsDisplayed;
         $('#cardwindow').fadeOut(1000);
         $('#cardselect').delay(500).fadeOut(1000, 
