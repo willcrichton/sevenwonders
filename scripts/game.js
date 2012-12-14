@@ -122,16 +122,14 @@ SevenWonders.prototype = {
                     }
                     else{
                         $(self.currentHoverCard).find('img').css('box-shadow', 'none');
-                        self.currentHoverCard = this;
                         self.hoverlock = 2;
                         $(this).trigger('mouseenter');
                         self.hoverlock = 1;
                     }
                 }
-                else{
+                else
                     self.hoverlock = 1;
-                    self.currentHoverCard = this;
-                }
+                self.currentHoverCard = this;
             });
 
             this.trashCardsDisplayed.push(carddiv);
@@ -451,6 +449,7 @@ SevenWonders.prototype = {
                         self.send(opts, 'checkresources');
                     }
                     self.trashing = false;
+                    return false;
                 });
 
                 $('.wonder').click(function (e) {
