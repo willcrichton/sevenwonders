@@ -256,7 +256,7 @@ class SevenWonders {
                     else
                         $state = Player::BUYING;
                 }
-                $this->log("{$user->info()} $chose {$foundCard->getName}");
+                $this->log("{$user->info()} chose {$foundCard->getName()} in state $state");
 
                 if (!isset($user->state)) {
                     $user->state = $state;
