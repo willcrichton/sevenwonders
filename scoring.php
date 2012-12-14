@@ -231,6 +231,7 @@ class Science {
     }
 
     public function points() {
+        // Maximize point value of wildcards
         if ($this->amts[self::ANY] > 0) {
             $max = 0;
             $this->amts[self::ANY]--;
@@ -258,6 +259,7 @@ class Military {
     private $_size = 0;
     private $amt = array(-1 => 0, 1 => 0, 3 => 0, 5 => 0);
 
+    // Player receives appropriate military tokens at end of age
     public function fight($other, $age) {
         if ($other->_size > $this->_size) {
             $this->amt[-1]++;

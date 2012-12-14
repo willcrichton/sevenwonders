@@ -294,18 +294,34 @@ SevenWonders.prototype = {
             });
     },
 
+    shrinkCard: function(card){
+        card = $(card);
+        card.css('z-index', 1);
+        card.animate({
+            width: this.cardWidth,
+            height: this.cardHeight,
+            left: '+=25px',
+            bottom: '+=38px',
+            rotate: card.data('rotation')
+        }, 200);
+        card.removeClass('selected');
+        card.find('.options, .slider').css('display', 'none');
+    },
+
+    // handle all the different messages sent from the server
     onMessage: function(args, msg){
         switch(args.messageType){
+            // we're dealt a new hand
             case 'hand':
                 args.cards = $.map(args.cards, function(k,v){ return [k]; });
 
-                $('#resources #current').html('');
-                $('#age').html(args.age);
+                // Ignore all remaining cards on the board
                 $('.card').addClass('ignore');
                 $('.card:not(.highlighted, .played)').fadeOut(500, function(){
                     $(this).remove();
                 });
 
+                // Use self to refer to SevenWonder object in callbacks/other scopes
                 var self = this;
 
                 // move selected card to board for later reference
@@ -316,8 +332,7 @@ SevenWonders.prototype = {
                     });
                 }
 
-                // animate selected to board
-
+                // Insert new hand into the board
                 var count = args.cards.length;
                 for(i in args.cards){
                     var card = args.cards[i];
@@ -326,16 +341,10 @@ SevenWonders.prototype = {
                     count--;
                 }
 
+                // One liner to get the index of a card based on its id
                 function cardIndex(card){
                     return parseInt($(card).attr('id').substring(4,5)) - 1;
                 }
-
-                /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-                * This is where we start handling animations for cards.  *
-                * It gets pretty messy. There's a lot of interface stuff *
-                * going on to check edge cases and what not.             *
-                *             I am not proud of this code.               *
-                * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
                 // Put new cards at start position and rotate them accordingly
                 var numCards = args.cards.length;
@@ -351,14 +360,16 @@ SevenWonders.prototype = {
                     $(this).data('rotation', deg);
                 })
 
-                // card dealing animation
+                // card dealing animation (on a timeout to avoid browser issues)
                 setTimeout(function(){
                     $('.card:not(.ignore)').each(function(){
                         var index = cardIndex(this);
+                        // send card to appropriate position on the main board
                         $(this).animate({
                             'bottom': '+=' + ((Math.pow(index + 0.5 - numCards / 2, 2) * -8) + 665),
                             'left': '+=' + (index + 0.5 - numCards / 2) * 120
                         }, 1500, 'easeOutExpo', function(){
+                            // we overflow hidden when dealing to avoid troubles where cards start outside the screen
                             $('#game').css("overflow", "auto");
                         });
                     });
@@ -367,34 +378,20 @@ SevenWonders.prototype = {
                 // card blow up animation (on click)
                 $('.card').click(function(e){
                     e.stopPropagation();
+                    // don't let the player blow up cards which are moving currently or shouldn't be blown up
                     if($(this).is(':animated') || $(this).hasClass('ignore')) return;
+                    // if we're clicking on a blown up card, shrink it back down
                     if($(this).hasClass('selected')){
-                        $(this).css('z-index', 1);
-                        $(this).animate({
-                            width: self.cardWidth,
-                            height: self.cardHeight,
-                            left: '+=25px',
-                            bottom: '+=38px',
-                            rotate: $(this).data('rotation')
-                        }, 200);
-                        $(this).removeClass('selected');
+                        self.shrinkCard(this);
                         $('.card:not(.ignore)').animate({ opacity: 1 }, 200);
-                        $(this).find('.options, .slider').css('display', 'none');
                     } else {
-                        $('.card.selected').css('z-index', 1);
-                        $('.card.selected').each(function(){
-                            $(this).animate({
-                                width: self.cardWidth,
-                                height: self.cardHeight,
-                                left: '+=25px',
-                                bottom: '+=38px',
-                                rotate: $(this).data('rotation')
-                            }, 200);
-                            $(this).find('.options, .slider').css('display', 'none');
-                        });
-                        $('.card:not(.ignore)').removeClass('selected');
-                        $(this).addClass('selected');
+                        // shrink a selected card if it exists
+                        var selected = $('.card.selected');
+                        self.shrinkCard(selected);
+
+                        // Lower opacity on non-selected cards
                         $('.card:not(.ignore, #' + $(this).attr('id') + ')').animate({ opacity: 0.1 }, 200);
+                        $(this).addClass('selected');
                         $(this).animate({
                             width: self.cardWidth + 50,
                             height: self.cardHeight + 76.5,
@@ -405,6 +402,8 @@ SevenWonders.prototype = {
                         }, 200, function(){
                             $(this).find('.options').fadeIn(200);
                             $(this).css('z-index', 2);
+
+                            // Show the slider if they closed out and came back in between buying
                             var slider = $(this).find('.slider');
                             if(slider.height() > 0){
                                 slider.css({height: 0, display: 'block'});
@@ -413,20 +412,21 @@ SevenWonders.prototype = {
                         });
                     }
                 });
+
                 $('.card').each(function(_, card) {
                     self.resetCard($(card));
                 });
-
-            break;
+                break;
 
             case 'cardschosen':
+                // Push cards into the left/right columns if our neighbors played any
                 if (args.left)
                     this.updateColumn('left', args.left.color,
                                       this.cardImageFromName(args.left.name), 200);
                 if (args.right)
                     this.updateColumn('right', args.right.color,
                                       this.cardImageFromName(args.right.name), 200);
-            break;
+                break;
 
             case 'coins':
                 this.coins = args.data;

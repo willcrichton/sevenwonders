@@ -43,6 +43,8 @@ class Player {
     public $secondState;        // what's happening to the second card
     public $secondCost;         // pending cost of the second card
 
+    public $canStealGuild;      // olympia's guild steal (b side)
+
     // Figuring out card costs
     private $possibilities;
 
@@ -141,6 +143,17 @@ class Player {
         // 3rd age yellow cards + guild cards (others all return 0)
         foreach($this->cardsPlayed as $card)
             $total += $card->points($this);
+
+        if($this->canStealGuild){
+            $cards = array_merge($this->leftPlayer->cardsPlayed, 
+                                 $this->rightPlayer->cardsPlayed);
+            $max = 0;
+            foreach($this->cards as $card)
+                if($card->getColor() == 'purple')
+                    $max = max($card->points($this), $max);
+
+            $total += $max;
+        }
 
         return $total;
     }
@@ -302,6 +315,7 @@ class Player {
                 $this->getFreeCard();
                 break;
             case 'guild':    // olympia's steal a guild at the end of the game
+                $this->canStealGuild = true;
                 break;
             case 'discard':  // halikarnassus's play from the discard pile
                 break;
