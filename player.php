@@ -3,6 +3,11 @@
 require_once('scoring.php');
 
 class Player {
+    const TRASHING  = 'trashing';
+    const BUYING    = 'buying';
+    const BUILDING  = 'building';
+    const USINGFREE = 'usingfree';
+
     // General player state
     private $_id;
     private $_name;
@@ -25,15 +30,23 @@ class Player {
     public $militaryPoints;
     public $points;
     public $science;
-    public $isTrashing;
-    public $isBuildWonder;
     public $leftPlayer;
     public $rightPlayer;
     public $discounts;
+    public $state;              // one of the constants above (or unset)
+
+    public $canHaveFreeCard;    // state for olympia's free card
+    public $hasFreeCard;
+
+    public $canPlayTwoBuilt;    // state for babylon's play2 stage
+    public $secondPending;      // second card being played
+    public $secondState;        // what's happening to the second card
+    public $secondCost;         // pending cost of the second card
+
+    public $canStealGuild;      // olympia's guild steal (b side)
 
     // Figuring out card costs
-    private $_lastCostCard;
-    private $_lastCost;
+    private $possibilities;
 
     public function __construct($id, $unique) {
         $this->_name = "Guest $unique";
@@ -70,12 +83,13 @@ class Player {
         $this->points = 0;
         $this->military = new Military();
         $this->science = new Science();
-        $this->isTrashing = false;
-        $this->isBuildWonder = false;
         $this->wonderStage = 0;
         $this->leftPlayer = null;
         $this->rightPlayer = null;
         $this->discounts = array('left' => array(), 'right' => array());
+        $this->canHaveFreeCard = false;
+        $this->hasFreeCard = false;
+        $this->canPlayTwoBuilt = false;
     }
 
     public function game() {
@@ -130,6 +144,21 @@ class Player {
         foreach($this->cardsPlayed as $card)
             $total += $card->points($this);
 
+        // if player has guild card stealing wonder
+        // todo: TEST THIS
+        if($this->canStealGuild){
+            // caluculate maximum points
+            $cards = array_merge($this->leftPlayer->cardsPlayed, 
+                                 $this->rightPlayer->cardsPlayed);
+            $max = 0;
+            foreach($cards as $card){
+                if($card->getColor() == 'purple' or $card->getColor() == 'blue')
+                    $max = max($card->points($this), $max);
+            }
+
+            $total += $max;
+        }
+
         return $total;
     }
 
@@ -146,6 +175,8 @@ class Player {
     }
 
     public function sendHand() {
+        // called once per turn, reset calculated card possibilities
+        $this->possibilities = array();
         if(isset($this->hand)){
             $info = array_map(function($c) { return $c->json(); }, $this->hand);
             $this->send('hand',
@@ -153,9 +184,10 @@ class Player {
         }
     }
 
-    public function sendStartInfo($playerInfo) {
+    public function sendStartInfo($playerInfo, $isRejoin = false) {
         $tojson = function($a) { return $a->json(); };
-        $wonderInfo = array("name" => $this->wonderName);
+        $wonderInfo = array("name" => $this->wonderName,
+                            "stage" => $this->wonderStage);
         if (isset($this->wonder['resource']))
             $wonderInfo['resource'] = $this->wonder['resource']->json();
         $startInfo = array(
@@ -168,13 +200,18 @@ class Player {
                                  'right' => $this->rightPlayer->id()),
             'leftcards' => array_map($tojson, $this->leftPlayer->cardsPlayed),
             'rightcards' => array_map($tojson, $this->rightPlayer->cardsPlayed),
-            'played' => array_map($tojson, $this->cardsPlayed)
+            'played' => array_map($tojson, $this->cardsPlayed),
+            'rejoin' => $isRejoin
         );
         $this->send("startinfo", $startInfo);
+        if ($this->hasFreeCard)
+            $this->getFreeCard();
+        if ($this->canPlayTwoBuilt)
+            $this->send('canplay2', '');
     }
 
     public function rejoinGame() {
-        $this->sendStartInfo($this->_game->playerInfo);
+        $this->sendStartInfo($this->_game->playerInfo, true);
         $this->sendHand();
     }
 
@@ -192,15 +229,15 @@ class Player {
 
         // Save off what we just calculated so we can verify a cost strategy
         // when one is provided when playing the card
-        $this->_lastCost = $possibilities;
-        $this->_lastCostCard = $card;
+        $this->possibilities[$card->getName()] =
+            array('combs' => $possibilities, 'type' => $type);
 
         // Send off everything we just found
         $this->send('possibilities', array('combs' => $possibilities));
     }
 
     private function calculateCost(WonderCard $card, $type) {
-        if ($type == 'card') {
+        if ($type == 'play') {
             // check for duplicates
             foreach ($this->cardsPlayed as $cardPlayed)
                 if ($cardPlayed->getName() == $card->getName())
@@ -247,22 +284,23 @@ class Player {
         return $possible;
     }
 
-    public function cardCost(WonderCard $card, $selection){
+    public function cardCost(WonderCard $card, $selection, $type){
         // Make sure we've pre-calculated the cost of this card and that the
         // specified selection is in bounds
-        if (!isset($this->_lastCost) || !isset($this->_lastCost[$selection]) ||
-            $this->_lastCostCard->getName() != $card->getName())
+        if (!isset($this->possibilities[$card->getName()]))
+            return false;
+        $arr = $this->possibilities[$card->getName()];
+        if (!isset($arr['combs'][$selection]) || $arr['type'] != $type)
             return false;
 
-        $ret = $this->_lastCost[$selection];
-        unset($this->_lastCost);
-        unset($this->_lastCostCard);
-        return $ret;
+        unset($this->possibilities[$card->getName()]);
+        return $arr['combs'][$selection];
     }
 
     public function playWonderStage() {
         $stage = $this->wonder['stages'][$this->wonderStage];
         $this->wonderStage++;
+
         // Do all the easy things first
         if (isset($stage['military']))
             $this->military->add($stage['military']);
@@ -278,14 +316,94 @@ class Player {
             return;
 
         switch ($stage['custom']) {
-            case '1free':   // olympia's 1 free card per age
+            case '1free':    // olympia's 1 free card per age
+                $this->getFreeCard();
                 break;
-            case 'guild':   // olympia's steal a guild at the end of the game
+            case 'guild':    // olympia's steal a guild at the end of the game
+                $this->canStealGuild = true;
                 break;
-            case 'discard': // halikarnassus's play from the discard pile
+            case 'discard':  // halikarnassus's play from the discard pile
                 break;
-            case 'play2':   // babylon's play both cards at the end of a hand
+            case 'play2':    // babylon's play both cards at the end of a hand
+                $this->canPlayTwoBuilt = true;
+                $this->send('canplay2', '');
+                break;
+
+            case 'discount': // olympia's discount COWS for both L/R
+                $resource = new Resource(false, false);
+                $resource->add(Resource::CLAY);
+                $resource->add(Resource::ORE);
+                $resource->add(Resource::WOOD);
+                $resource->add(Resource::STONE);
+                $this->addDiscount('left', $resource);
+                $this->addDiscount('right', $resource);
                 break;
         }
+    }
+
+    public function getFreeCard() {
+        $this->canHaveFreeCard = true;
+        $this->hasFreeCard = true;
+        $this->send('freecard', array('hasfree' => true));
+    }
+
+    public function useFreeCard() {
+        $this->hasFreeCard = false;
+        $this->send('freecard', array('hasfree' => false));
+    }
+
+    public function isPlayingCard() {
+        return $this->state == self::BUYING || $this->state == self::USINGFREE;
+    }
+
+    public function playCard(SevenWonders $game, WonderCard $card, $state,
+                             $costarr) {
+        switch ($state) {
+            case Player::TRASHING:
+                $this->addCoins(3);
+                $game->discard[] = $card;
+                break;
+
+            case Player::BUYING:
+                $card->play($this);
+                $this->cardsPlayed[] = $card;
+                $this->addCoins(-1 * $card->getMoneyCost());
+                break;
+
+            case Player::BUILDING:
+                $this->playWonderStage();
+                break;
+
+            case Player::USINGFREE:
+                $this->useFreeCard();
+                $card->play($this);
+                $this->cardsPlayed[] = $card;
+                break;
+
+            default:
+                throw new Error("unimplemented play state");
+        }
+
+        unset($this->hand[array_search($card, $this->hand)]);
+
+        // Consume money cost for this this and pay adjacent thiss
+        foreach ($costarr as $dir => $cost) {
+            if ($dir == 'left')
+                $this->leftPlayer->addCoins($cost);
+            else if ($dir == 'right')
+                $this->rightPlayer->addCoins($cost);
+            $this->addCoins(-1 * $cost);
+        }
+    }
+
+    public function canPlayTwo() {
+        // With babylon's play2 wonder stage, you've either built it in the past
+        // so you can play two, or you are building it currently, enabling
+        // yourself to play two cards.
+        return $this->canPlayTwoBuilt ||
+              (isset($this->state) &&
+               $this->state == Player::BUILDING &&
+               isset($this->wonder['stages'][$this->wonderStage]['custom']) &&
+               $this->wonder['stages'][$this->wonderStage]['custom'] == 'play2');
     }
 }

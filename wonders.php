@@ -14,9 +14,9 @@ class SevenWonders {
     public $started = false;
     public $age = 1;
     public $turn = 1;
-    public $cardsChosen = array();
     public $wonders;
     public $playerInfo;
+    public $discard = array();
 
     public function __construct(){
         global $deck;
@@ -143,48 +143,32 @@ class SevenWonders {
         // execute effects of all played cards
         foreach ($this->players as $player) {
             $data = array();
-            if (!$player->leftPlayer->isTrashing)
+            if ($player->leftPlayer->isPlayingCard())
                 $data['left'] = $player->leftPlayer->selectedCard->json();
-            if (!$player->rightPlayer->isTrashing)
+            if ($player->rightPlayer->isPlayingCard())
                 $data['right'] = $player->rightPlayer->selectedCard->json();
             $player->send('cardschosen', $data);
 
-            $card = $player->selectedCard;
-            if ($player->isTrashing) {
-                $this->log("{$player->info()} trashing " . $card->getName());
-                $player->addCoins(3);
-                $player->isTrashing = false;
-            } elseif ($player->isBuildWonder == true) {
-                $this->log("{$player->info()} wondering " . $card->getName());
-                $player->playWonderStage();
-                $player->isBuildWonder = false;
-            } else {
-                $this->log("{$player->info()}) playing " . $card->getName());
-                $card->play($player);
-                $player->cardsPlayed[] = $card;
-                $player->addCoins(-1 * $card->getMoneyCost());
-            }
-
-            if (isset($player->pendingCost)) {
-                // Consume money cost for this player and pay adjacent players
-                foreach ($player->pendingCost as $dir => $cost) {
-                    if ($dir == 'left')
-                        $player->leftPlayer->addCoins($cost);
-                    else if ($dir == 'right')
-                        $player->rightPlayer->addCoins($cost);
-                    $player->addCoins(-1 * $cost);
-                }
-            }
-
-            unset($player->hand[array_search($card, $player->hand)]);
+            // play both cards (if we can)
+            $player->playCard($this, $player->selectedCard, $player->state,
+                              $player->pendingCost);
+            if (isset($player->secondState))
+                $player->playCard($this, $player->secondPending,
+                                  $player->secondState, $player->secondCost);
         }
 
         foreach ($this->players as $player) {
+            unset($player->state);
             unset($player->selectedCard);
             unset($player->pendingCost);
+            unset($player->secondState);
+            unset($player->secondPending);
+            unset($player->secondCost);
+
+            if ($this->turn == 6 && count($player->hand) > 0)
+                $this->discard[] = array_pop($player->hand);
         }
 
-        $this->cardsChosen = array();
         if ($this->turn == 6) {
             // go into a new age
             $this->log("Ending age {$this->age}");
@@ -192,6 +176,9 @@ class SevenWonders {
             $this->log("Evaluating military");
             foreach ($this->players as $player) {
                 $player->evaluateMilitary($this->age);
+
+                if ($player->canHaveFreeCard)
+                    $player->getFreeCard();
             }
 
             $this->age++;
@@ -211,42 +198,78 @@ class SevenWonders {
 
     public function onMessage(Player $user, $args){
         switch($args['messageType']){
-            case 'cardplay':
-                $cardName = $args['value'][0];
-                // match what they sent with a Card object
-                foreach ($user->hand as $card) {
-                    if($card->getName() == $cardName) $foundCard = $card;
-                }
-                print_r(!isset($foundCard));
-                if (!isset($foundCard)) // don't have the specified card
-                    break;
-                if ($args['value'][1] == 'trash') {
+            case 'cardignore':
+                $card = $args['card'];
+                // First handle if you ignore the selected card (default)
+                if (isset($user->state) &&
+                    $user->selectedCard->getName() == $card) {
+                    unset($user->state);
+                    unset($user->selectedCard);
                     unset($user->pendingCost);
-                    $user->isTrashing = true;
-                    $user->isBuildWonder = false;
-                } else {
-                    $cost = $user->cardCost($foundCard, $args['value'][2]);
-                    if ($cost === false)
-                        break;
-                    $user->isTrashing = false;
-                    $user->isBuildWonder = ($args['value'][1] == 'wonder');
-                    $user->pendingCost = $cost;
                 }
-                $this->log("{$user->info()} chose {$foundCard->getName()}");
-                $this->cardsChosen[$user->id()] = $foundCard;
-                $user->selectedCard = $foundCard;
-                $user->send('canplay', '');
-                // if everyone's played a card, execute cards and redeal/new turn
-                if (count($this->cardsChosen) == count($this->players)) {
-                    $this->playCards();
+
+                // If you ignored the first card, then we have to force ignoring
+                // the second card (maybe first enabled second). Otherwise we
+                // only need to ignore the second card if it's the actual card
+                if (isset($user->secondState) &&
+                    ($user->secondPending->getName() == $card ||
+                     !isset($user->state))) {
+                    unset($user->secondState);
+                    unset($user->secondPending);
+                    unset($user->secondCost);
                 }
                 break;
 
-            case 'cardignore':
-                $user->isTrashing = false;
-                unset($user->selectedCard);
-                unset($user->pendingCost);
-                unset($this->cardsChosen[$user->id()]);
+            case 'cardplay':
+                // TODO: this means that a refreshed game with a selected card
+                // won't be able to play any new cards because the card
+                // selection isn't pushed back to the user in the game info sent
+                if (isset($user->state) &&
+                    ($this->turn != 6 ||
+                     !$user->canPlayTwo() ||
+                     isset($user->secondState)))
+                    break;
+
+                $cardName = $args['value'][0];
+                // match what they sent with a Card object
+                foreach ($user->hand as $card)
+                    if($card->getName() == $cardName)
+                        $foundCard = $card;
+                if (!isset($foundCard)) // don't have the specified card
+                    break;
+
+                $cost = array();
+                $state = '';
+                if ($args['value'][1] == 'trash') {
+                    $state = Player::TRASHING;
+                } else if ($args['value'][1] == 'free') {
+                    if (!$user->hasFreeCard)
+                        break;
+                    $state = Player::USINGFREE;
+                } else {
+                    $cost = $user->cardCost($foundCard, $args['value'][2],
+                                            $args['value'][1]);
+                    if ($cost === false)
+                        break;
+                    if ($args['value'][1] == 'wonder')
+                        $state = Player::BUILDING;
+                    else
+                        $state = Player::BUYING;
+                }
+                $this->log("{$user->info()} chose {$foundCard->getName()} in state $state");
+
+                if (!isset($user->state)) {
+                    $user->state = $state;
+                    $user->selectedCard = $foundCard;
+                    $user->pendingCost = $cost;
+                } else {
+                    $user->secondState = $state;
+                    $user->secondPending = $foundCard;
+                    $user->secondCost = $cost;
+                }
+                // if everyone's played a card, execute cards and redeal/new turn
+                if ($this->finishedChoosing())
+                    $this->playCards();
                 break;
 
             case 'checkresources':
@@ -292,8 +315,20 @@ class SevenWonders {
                 print_r($args);
                 break;
         }
-   	}
+    }
+
+    private function finishedChoosing() {
+        $count = 0;
+        foreach ($this->players as $player) {
+            if (!isset($player->state))
+                continue;
+            if ($this->turn == 6 && $player->canPlayTwo() &&
+                !isset($player->secondState))
+                continue;
+            $count++;
+        }
+        return $count == count($this->players);
+    }
 }
 
 ?>
-

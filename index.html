@@ -37,6 +37,10 @@
                         my_name = args.name;
                         changeName({name:{value: my_name}});
                         $('input[name=name]').attr('value', my_name);
+
+                        // doing this so we don't have that awkward flashing screen on refresh
+                        if(!args.ingame && !$('#pregame').is(':visible'))
+                                $('#pregame').fadeIn(100);
                         break;
 
                     case 'newgame':
@@ -55,8 +59,15 @@
                     case 'startinfo':
                         status = "game";
                         $('#pregame, #game, body').css('overflow', 'hidden');
-                        $('#pregame').fadeOut(500);
-                        $('#game').fadeIn(500, function(){ $('#pregame, #game, body').css('overflow', 'auto'); });
+                        if(args.rejoin == true){
+                            $('#pregame').css('display', 'none');
+                            $('#game').css('display', 'block');
+                            $('#pregame, #game, body').css('overflow', 'auto');
+                        } else {
+                            $('#pregame').fadeOut(500, function(){
+                                $('#game').fadeIn(500, function(){ $('#pregame, #game, body').css('overflow', 'auto'); });
+                            });
+                        }
 
                         game = new SevenWonders(socket, args);
                         break;
