@@ -6,8 +6,6 @@ var SevenWonders = function(socket, args){
     this.cardsPlayed = [];
     this.leftPlayed = {};
     this.rightPlayed = {};
-    this.trashing = false;
-    this.buildingWonder = false;
     this.neighbors = args.neighbors;
     this.wonderSide = args.wonderside || 'a';
     this.wonderStage = 1;
@@ -15,6 +13,7 @@ var SevenWonders = function(socket, args){
     this.cardWidth = 123;
     this.cardHeight = 190;
     this.hasfree = false; // has a free card from olympia's wonder
+    this.hastwo = false;  // can play second card from babylon's wonder
 
     // select wonder image here (load in appropriately)
     var self = this;
@@ -150,17 +149,17 @@ SevenWonders.prototype = {
     },
 
     moveToBoard: function(card, animate) {
+        var state = card.data('state');
+        card.data('state', '');
         card.addClass('played').attr('id', '');
-        if (this.trashing) {
-            this.trashing = false;
+        if (state == 'trashing') {
             card.animate({
                 left: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
                 bottom: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
                 opacity: 0,
             }, 500, function(){ $(this).remove(); });
             return;
-        } else if(this.buildingWonder) {
-            this.buildingWonder = false;
+        } else if (state == 'building') {
             card.animate({
                 // animate to board where wonder is
             }).fadeOut(200);
@@ -215,38 +214,46 @@ SevenWonders.prototype = {
     },
 
     resetHighlight: function(){
+        var hand = $('.card:not(.played)');
+        // If we can play the last two cards, don't actually reset the highlight
+        // on the last card
+        if (this.hastwo && hand.length == 2)
+            return;
+
         var old = $('.highlighted');
-        if(old.length > 0){
+        if (old.length > 0) {
+            this.send({card: old.find('h1').text()}, 'cardignore')
             old.removeClass('highlighted');
             old.find('.options a').css('visibility', 'visible')
                                   .animate({opacity: 1}, 200);
-            old.find('.play').removeClass('buy');
+            old.find('.play').removeClass('buy no');
             old.find('.wonder').removeClass('free');
+            this.resetCard(old);
         }
     },
 
     resetCard: function(card) {
         var self = this;
+        card.data('state', '');
         card.find('.trash').unbind('click').click(function(e){
-            self.trashing = true;
-            self.buildingWonder = false;
+            card.data('state', 'trashing');
             self.chooseCard(card, 0);
             return false;
         });
 
         card.find('.play').unbind('click').click(function(e){
-            var opts = {value: card.find('h1').html(), type: 'card'};
-            self.trashing = false;
-            self.buildingWonder = false;
+            var opts = {value: card.find('h1').html(), type: 'play'};
+            card.data('state', 'playing');
             self.send(opts, 'checkresources');
+            self.resetHighlight();
             return false;
         });
 
         card.find('.wonder').unbind('click').click(function(e) {
             var opts = {value: card.find('h1').html(), type: 'wonder'};
-            self.trashing = false;
-            self.buildingWonder = true;
+            card.data('state', 'building');
             self.send(opts, 'checkresources');
+            self.resetHighlight();
             return false;
         });
 
@@ -255,13 +262,14 @@ SevenWonders.prototype = {
     },
 
     chooseCard: function(card, index) {
+        this.resetHighlight();
         card.addClass('highlighted');
         var type = 'play';
-        if (this.trashing)
+        if (card.data('state') == 'trashing')
             type = 'trash';
         else if (index == -1)
             type = 'free';
-        else if (this.buildingWonder)
+        else if (card.data('state') == 'building')
             type = 'wonder';
         this.send([card.find('h1').html(), type, index], 'cardplay');
 
@@ -269,23 +277,21 @@ SevenWonders.prototype = {
         card.find('.options a').animate({ opacity: 0 }, 200, function(){
             $(this).removeClass('free buy');
             if ($(this).hasClass('play')) {
-                $(this).addClass('no')
-                       .animate({opacity: 1}, 200)
-                       .unbind('click')
-                       .click(function() {
-                           self.send('', 'cardignore')
-                           $(this).animate({opacity: 0}, 200, function(){
-                               $(this).removeClass('no');
-                               self.resetCard(card);
-                           });
-                           return false;
-                       });
+                $(this).addClass('no').animate({opacity: 1}, 200);
             } else {
-                $(this).animate({opacity: 0}, 200, function() {
-                    $(this).css('visibility', 'hidden');
-                });
+                $(this).css('visibility', 'hidden');
             }
         });
+        card.find('a.play')
+            .unbind('click')
+            .click(function() {
+                $(this).animate({opacity: 0}, 200, function(){
+                    self.resetHighlight();
+                    $(this).removeClass('no');
+                    self.resetCard(card);
+                });
+                return false;
+            });
     },
 
     onMessage: function(args, msg){
@@ -305,8 +311,9 @@ SevenWonders.prototype = {
                 // move selected card to board for later reference
                 var selected = $('.card.highlighted');
                 if(selected.length){
-                    // TODO: animate this rotation (animateTo doesn't work)
-                    this.moveToBoard(selected, true);
+                    $.each(selected, function(_, card) {
+                        self.moveToBoard($(card), true);
+                    });
                 }
 
                 // animate selected to board
@@ -431,8 +438,8 @@ SevenWonders.prototype = {
                 break;
 
             case 'possibilities':
-                var showfree = this.hasfree && !this.buildingWonder;
                 var card = $('.card.selected');
+                var showfree = this.hasfree && card.data('state') != 'building';
 
                 // If this is impossible to play, throw up a message saying so
                 // and don't allow a click to play it.
@@ -463,8 +470,6 @@ SevenWonders.prototype = {
 
                 // If it's a free card, then we just chose it
                 if (minCost == 0) {
-                    this.resetHighlight();
-                    $('.card:not(.ignore)').removeClass('highlighted');
                     this.chooseCard(card, 0);
                     return;
                 }
@@ -563,9 +568,13 @@ SevenWonders.prototype = {
                 this.hasfree = args.hasfree;
                 break;
 
+            case 'canplay2':
+                this.hastwo = true;
+                break;
+
             default:
                 console.log(args, msg);
-            break;
+                break;
         }
     }
 }
