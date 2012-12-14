@@ -217,9 +217,9 @@ class SevenWonders {
                 foreach ($user->hand as $card) {
                     if($card->getName() == $cardName) $foundCard = $card;
                 }
+                print_r(!isset($foundCard));
                 if (!isset($foundCard)) // don't have the specified card
                     break;
-
                 if ($args['value'][1] == 'trash') {
                     unset($user->pendingCost);
                     $user->isTrashing = true;

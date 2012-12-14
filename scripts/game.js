@@ -5,6 +5,8 @@ var SevenWonders = function(socket, args){
     this.socket = socket;
     this.cardsPlayed = [];
     this.trashCardsDisplayed = [];
+    this.hoverlock = 0;
+    this.currentHoverCard = 0;
     this.leftPlayed = {};
     this.rightPlayed = {};
     this.trashing = false;
@@ -63,25 +65,29 @@ SevenWonders.prototype = {
     },
 
     selectcards: function(){
-        var trashCards = [{name: 'Altar', color: 'blue'},{name:'Stockade', color: 'red'},{name: 'Glassworks', color: 'grey'},{name: 'Clay Pool', color: 'brown'},{name: 'Tavern', color: 'yellow'},{name: 'School', color: 'green'},{name: 'Scientists Guild', color: 'purple'},{name: 'Forest Cave', color: 'brown'},{name: 'Loom', color: 'grey'}];
-        var count = trashCards.length+200;
-        var selectCardWidth = 123;
-        var selectCardHeight = 190;
-
         $("#cardselect").css({width: $('#game').width()-100, height: $('#game').height()-100});
         $('#cardselect').fadeIn(1000);
         $('#cardwindow').delay(500).fadeIn(1500);
 
+        var trashCards = $.map(this.cardsPlayed, function(a){return a.data('cardInfo');})
+        var count = trashCards.length+200;
+        var selectCardWidth = 123;
+        var selectCardHeight = 190;
+        self = this;
+
         for(i in trashCards){
             var card = trashCards[i];
             var carddiv = this.cardDiv(count, card);
-            var numInColor = 0;
             $('#cardwindow').prepend(carddiv);
+
             carddiv.data('cardInfo', card);
             var cardColor = carddiv.data('cardInfo').color;
             var index = this.colorOrder.indexOf(cardColor);
+
+            var numInColor = 0;
             for(i in this.trashCardsDisplayed)
                 if(this.trashCardsDisplayed[i].data('cardInfo').color == cardColor) numInColor++; 
+
             carddiv.find('.options, h1').css('display', 'none');
             carddiv.css({
                 'z-index': 2000 - numInColor,
@@ -89,34 +95,77 @@ SevenWonders.prototype = {
                 'bottom': 10 + numInColor * 40,
                 'width': selectCardWidth,
                 'height': selectCardHeight});
-            carddiv.hover(function(){
-                hoverCardDiv.find('img').attr('src',$(this).find('img').attr('src'));
-                hoverCardDiv.addClass('hovercard');
-                hoverCardDiv.find('.options, h1').css('display', 'block');
+
+            carddiv.hover(
+                function(){
+                    if(!self.hoverlock || self.hoverlock == 2){
+                        hoverCardDiv.find('img').attr('src',$(this).find('img').attr('src'));
+                        hoverCardDiv.addClass('hovercard');
+                        hoverCardDiv.find('h1')[0].innerHTML = $(this).find('h1')[0].innerHTML;
+                    }
+                    if(!self.hoverlock)
+                        $(this).find('img').css('box-shadow', '0px -3px 20px');
+                },
+                function(){
+                    if(!self.hoverlock)
+                        $(this).find('img').css('box-shadow', 'none');
+                }
+            );
+
+            carddiv.click(function(e){
+                e.stopPropagation();
+                $(this).find('img').css('box-shadow', '0px -3px 20px');
+                if(self.hoverlock){
+                    if(this == self.currentHoverCard){
+                        self.hoverlock = 0;
+                        $(this).find('img').css('box-shadow', 'none');
+                    }
+                    else{
+                        $(self.currentHoverCard).find('img').css('box-shadow', 'none');
+                        self.currentHoverCard = this;
+                        self.hoverlock = 2;
+                        $(this).trigger('mouseenter');
+                        self.hoverlock = 1;
+                    }
+                }
+                else{
+                    self.hoverlock = 1;
+                    self.currentHoverCard = this;
+                }
             });
+
             this.trashCardsDisplayed.push(carddiv);
             count--;
         }
-        console.log('code is called');
+
         var hoverCardDiv = this.cardDiv(199,trashCards[0]);
         $('#hovercardwindow').prepend(hoverCardDiv);
         hoverCardDiv.data('cardInfo',trashCards[0]);
         hoverCardDiv.addClass('hovercard');
         hoverCardDiv.find('.options, h1').css('display', 'block');
         this.trashCardsDisplayed.push(hoverCardDiv);
+
         $('.hovercard .options .play').click(function(e){
-            console.log('hi!');
+            var card = $(this).closest('.card');
+            console.log(card.find('h1').html())
+            var opts = {value: [card.find('h1').html(), 'play', 0]};
+            self.send(opts, 'cardplay');
             return false;
         });
+
+        $('#cardwindow').click(function(e){
+            self.hoverlock = 0
+            $(self.currentHoverCard).find('img').css('box-shadow', 'none');
+        })
     },
 
     rmselectcards: function(){
+        var trash = this.trashCardsDisplayed;
         $('#cardwindow').fadeOut(1000);
         $('#cardselect').delay(500).fadeOut(1000, 
-        var self = this;
             function(){
-                for(i in self.trashCardsDisplayed){
-                    self.trashCardsDisplayed[i].remove();
+                for(i in trash){
+                    trash[i].remove();
                 }
             });
         this.trashCardsDisplayed = [];
@@ -268,7 +317,6 @@ SevenWonders.prototype = {
                 });
 
                 var self = this;
-
                 // move selected card to board for later reference
                 var selected = $('.card.highlighted');
                 if(selected.length){
