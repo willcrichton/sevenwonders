@@ -178,6 +178,7 @@ SevenWonders.prototype = {
         //loop through the array of displayed cards and remove all of them
         var trash = this.trashCardsDisplayed;
         $('#cardwindow').fadeOut(1000);
+        var self = this;
         $('#cardselect').delay(500).fadeOut(1000, 
             function(){
                 for(i in trash){
