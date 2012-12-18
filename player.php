@@ -7,6 +7,7 @@ class Player {
     const BUYING    = 'buying';
     const BUILDING  = 'building';
     const USINGFREE = 'usingfree';
+    const USINGDISCARD = 'usingdiscard';
 
     // General player state
     private $_id;
@@ -145,14 +146,13 @@ class Player {
             $total += $card->points($this);
 
         // if player has guild card stealing wonder
-        // todo: TEST THIS
         if($this->canStealGuild){
             // caluculate maximum points
             $cards = array_merge($this->leftPlayer->cardsPlayed, 
                                  $this->rightPlayer->cardsPlayed);
             $max = 0;
             foreach($cards as $card){
-                if($card->getColor() == 'purple' or $card->getColor() == 'blue')
+                if($card->getColor() == 'purple')
                     $max = max($card->points($this), $max);
             }
 
@@ -323,12 +323,16 @@ class Player {
                 $this->canStealGuild = true;
                 break;
             case 'discard':  // halikarnassus's play from the discard pile
+                if(count($this->_game->discard) > 0){
+                    $tojson = function($a){ return $a->json(); };
+                    $this->state = Player::USINGDISCARD;
+                    $this->send('discard', array('cards' => array_map($tojson, $this->_game->discard)));
+                }
                 break;
             case 'play2':    // babylon's play both cards at the end of a hand
                 $this->canPlayTwoBuilt = true;
                 $this->send('canplay2', '');
                 break;
-
             case 'discount': // olympia's discount COWS for both L/R
                 $resource = new Resource(false, false);
                 $resource->add(Resource::CLAY);
@@ -353,7 +357,9 @@ class Player {
     }
 
     public function isPlayingCard() {
-        return $this->state == self::BUYING || $this->state == self::USINGFREE;
+        return isset($this->state) and ($this->state == self::BUYING || 
+                                        $this->state == self::USINGFREE ||
+                                        $this->state == self::USINGDISCARD);
     }
 
     public function playCard(SevenWonders $game, WonderCard $card, $state,
@@ -376,6 +382,11 @@ class Player {
 
             case Player::USINGFREE:
                 $this->useFreeCard();
+                $card->play($this);
+                $this->cardsPlayed[] = $card;
+                break;
+
+            case Player::USINGDISCARD:
                 $card->play($this);
                 $this->cardsPlayed[] = $card;
                 break;

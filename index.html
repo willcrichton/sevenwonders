@@ -96,7 +96,7 @@
             var my_id = localStorage.sevenwonders_id || '';
             var my_name = "Guest";
             var status = "lobby";
-            game = undefined; //Currently Global for testing purposes
+            var game = undefined;
             $(document).ready(function(){
                 $("#game").css({width: Math.max($(window).width(), 1420), height: Math.max($(window).height(), 730)});
                 var host = "ws://" + window.location.hostname + ":12345";
@@ -222,8 +222,8 @@
             </div>
             <div id="cardselect">
                 <div id="cardwindow">
+                    <h1></h1>                        
                     <div id="hovercardwindow">
-                        
                     </div>
                 </div>
             </div>

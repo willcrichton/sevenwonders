@@ -30,6 +30,7 @@ var SevenWonders = function(socket, args){
             self.wonderSide = isA ? 'a' : 'b';
             $('#wonder').css('background', 'url(images/wonders/' + self.wonder.name.toLowerCase() + self.wonderSide + '.png) no-repeat center center');
             self.send(isA, 'wonderside');
+            $('#setup img').unbind('click');
             $('#setup-container').fadeOut(200, function(){
                 $(this).css('display', 'none');
                 // show waiting screen for until hand pops up
@@ -52,7 +53,7 @@ var SevenWonders = function(socket, args){
                               this.cardImageFromName(args.rightcards[i].name), 0);
         for (i = 0; i < args.played.length; i++) {
             var div = this.cardDiv(0, args.played[i]);
-            $('#game').prepend(div);
+            $('#game').append(div);
             this.moveToBoard(div, false);
        }
        for (i = 0; i < args.wonder.stage; i++)
@@ -74,23 +75,25 @@ SevenWonders.prototype = {
         return '<img src="images/cards/' + name.toLowerCase().replace(/ /g, "") + '.png" />';
     },
 
-    selectcards: function(){
+    // Opens the discard or player card window
+    showCardSelect: function(cards, isDiscard){
         //set up card select window
         $("#cardselect").css({width: $('#game').width()-100, height: $('#game').height()-100});
-        $('#cardselect').fadeIn(1000);
-        $('#cardwindow').delay(500).fadeIn(1500);
+        $('#cardselect').fadeIn(400);
+        $('#cardwindow').delay(200).fadeIn(300);
+        $('#cardwindow > h1').html(isDiscard ? 'DISCARD PILE' : '[name]\'s CARDS'); // if isDiscard
 
         //initialize variables and dummy data
-        var trashCards = $.map(this.cardsPlayed, function(a){return a.data('cardInfo');})
-        var count = trashCards.length+200;
+        var count = cards.length+200;
         var selectCardWidth = 123;
         var selectCardHeight = 190;
-        self = this;
+        var self = this;
 
         //loop over all discarded cards, creating JQuery objects and Divs
-        for(i in trashCards){
-            var card = trashCards[i];
+        for(i in cards){
+            var card = cards[i];
             var carddiv = this.cardDiv(count, card);
+            carddiv.addClass('played');
             $('#cardwindow').prepend(carddiv);
 
             carddiv.data('cardInfo', card);
@@ -116,6 +119,7 @@ SevenWonders.prototype = {
                         hoverCardDiv.find('img').attr('src',$(this).find('img').attr('src'));
                         hoverCardDiv.addClass('hovercard');
                         hoverCardDiv.find('h1')[0].innerHTML = $(this).find('h1')[0].innerHTML;
+                        hoverCardDiv.data('cardInfo', $(this).data('cardInfo'));
                     }
                     if(!self.hoverlock)
                         $(this).find('img').css('box-shadow', '0px -3px 20px');
@@ -150,41 +154,54 @@ SevenWonders.prototype = {
             count--;
         }
 
-        //set up initial hover card div
-        var hoverCardDiv = this.cardDiv(199,trashCards[0]);
-        $('#hovercardwindow').prepend(hoverCardDiv);
-        hoverCardDiv.data('cardInfo',trashCards[0]);
-        hoverCardDiv.addClass('hovercard');
-        hoverCardDiv.find('.options, h1').css('display', 'block');
-        this.trashCardsDisplayed.push(hoverCardDiv);
-
-        //bind send function to play button
-        $('.hovercard .options .play').click(function(e){
-            var card = $(this).closest('.card');
-            console.log(card.find('h1').html())
-            var opts = {value: [card.find('h1').html(), 'play', 0]};
-            self.send(opts, 'cardplay');
-            return false;
-        });
-
         //allow for a click anywhere to deselect cards
         $('#cardwindow').click(function(e){
             self.hoverlock = 0
             $(self.currentHoverCard).find('img').css('box-shadow', 'none');
         })
+
+        //set up initial hover card div
+        var hoverCardDiv = this.cardDiv(199, cards[0]);
+        $('#hovercardwindow').prepend(hoverCardDiv);
+        hoverCardDiv.data('cardInfo', cards[0]);
+        hoverCardDiv.addClass('hovercard played');
+        hoverCardDiv.find('.options, h1').css('display', 'block');
+        this.trashCardsDisplayed.push(hoverCardDiv);
+
+        // For some reason, just setting the click function here DOESN'T F'ING WORK
+        // As in, the click is never called. So the solution: I have to reset the click
+        // later on in the process of loading the div. If a solution is found, please fix.
+        setTimeout(function(){
+            //bind send function to play button
+            hoverCardDiv.find('.play').unbind('click').click(function(e){
+                e.stopPropagation();
+                var card = $(this).closest('.card');
+                var opts = {value: [card.find('h1').html(), 'play', 0]};
+                self.send(opts, 'cardplay');
+                var newCard = self.cardDiv(200, card.data('cardInfo'));
+                var offset = card.offset();
+                newCard.css({
+                    bottom: $('#game').height() - offset.top,
+                    left: offset.left
+                });
+                $('#game').append(newCard);
+                self.moveToBoard(newCard, true);
+                self.hideCardSelect();
+                return false;
+            });
+        }, 100);
     },
 
-    rmselectcards: function(){
+    hideCardSelect: function(){
         //loop through the array of displayed cards and remove all of them
         var trash = this.trashCardsDisplayed;
-        $('#cardwindow').fadeOut(1000);
+        $('#cardwindow').delay(200).fadeOut(300);
         var self = this;
-        $('#cardselect').delay(500).fadeOut(1000, 
-            function(){
-                for(i in trash){
-                    trash[i].remove();
-                }
-            });
+        $('#cardselect').fadeOut(400, function(){
+            for(i in trash){
+                trash[i].remove();
+            }
+        });
         this.trashCardsDisplayed = [];
     },
 
@@ -294,6 +311,8 @@ SevenWonders.prototype = {
             this.buildWonderStage();
             return;
         }
+
+        console.log(card, card.data('cardInfo'));
 
         var infoPos = $('#wonder').position();
         var cardColor = card.data('cardInfo').color;
@@ -449,7 +468,7 @@ SevenWonders.prototype = {
         switch(args.messageType){
             // we're dealt a new hand
             case 'hand':
-                args.cards = $.map(args.cards, function(k,v){ return [k]; });
+                args.cards = $.map(args.cards || {}, function(k,v){ return [k]; });
 
                 // Ignore all remaining cards on the board
                 $('.card').addClass('ignore');
@@ -472,7 +491,7 @@ SevenWonders.prototype = {
                 for(i in args.cards){
                     var card = args.cards[i];
                     var div = this.cardDiv(count, card);
-                    $('#game').prepend(div);
+                    $('#game').append(div);
                     count--;
                 }
 
@@ -717,6 +736,13 @@ SevenWonders.prototype = {
 
             case 'canplay2':
                 this.hastwo = true;
+                break;
+
+            case 'discard':
+                console.log("discard", args);
+                if(args.cards != null && args.cards.length > 0){
+                    this.showCardSelect(args.cards, true);
+                }
                 break;
 
             default:

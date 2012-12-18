@@ -15,6 +15,7 @@ class SevenWonders {
     public $age = 1;
     public $turn = 1;
     public $wonders;
+    public $wondersChosen = false;
     public $playerInfo;
     public $discard = array();
 
@@ -76,7 +77,7 @@ class SevenWonders {
 
         // set up the start conditions
         $wonderKeys = array_keys($this->wonders);
-        shuffle($wonderKeys);
+        //shuffle($wonderKeys);
         foreach($this->players as $player){
             // starting moneyz
             $player->coins = 3;
@@ -137,7 +138,7 @@ class SevenWonders {
         } while($neighbor != $this->players[0]);
     }
 
-    private function playCards() {
+    private function playCards($isDiscard = false) {
         $this->log("All cards found");
 
         // execute effects of all played cards
@@ -149,6 +150,8 @@ class SevenWonders {
                 $data['right'] = $player->rightPlayer->selectedCard->json();
             $player->send('cardschosen', $data);
 
+            if($isDiscard and (!isset($player->state) or $player->state != Player::USINGDISCARD)) 
+                continue;
             // play both cards (if we can)
             $player->playCard($this, $player->selectedCard, $player->state,
                               $player->pendingCost);
@@ -157,8 +160,12 @@ class SevenWonders {
                                   $player->secondState, $player->secondCost);
         }
 
+        $shouldPause = false;
         foreach ($this->players as $player) {
-            unset($player->state);
+            if(!isset($player->state) or $player->state != Player::USINGDISCARD or $isDiscard)
+                unset($player->state);
+            else
+                $shouldPause = true;
             unset($player->selectedCard);
             unset($player->pendingCost);
             unset($player->secondState);
@@ -169,26 +176,31 @@ class SevenWonders {
                 $this->discard[] = array_pop($player->hand);
         }
 
-        if ($this->turn == 6) {
-            // go into a new age
-            $this->log("Ending age {$this->age}");
+        if(!$shouldPause){
+             if ($this->turn == 6) {
+                // go into a new age
+                $this->log("Ending age {$this->age}");
 
-            $this->log("Evaluating military");
-            foreach ($this->players as $player) {
-                $player->evaluateMilitary($this->age);
+                $this->log("Evaluating military");
+                foreach ($this->players as $player) {
+                    $player->evaluateMilitary($this->age);
 
-                if ($player->canHaveFreeCard)
-                    $player->getFreeCard();
+                    if ($player->canHaveFreeCard)
+                        $player->getFreeCard();
+                }
+
+                $this->age++;
+                $this->turn = 1;
+                $this->deal();
+            } else {
+                // change hands and start a new turn
+                $this->log("Ending turn " . $this->turn);
+                $this->turn++;
+                $this->rotateHands($this->age != 2);
             }
-
-            $this->age++;
-            $this->turn = 1;
-            $this->deal();
         } else {
-            // change hands and start a new turn
-            $this->log("Ending turn " . $this->turn);
-            $this->turn++;
-            $this->rotateHands($this->age != 2);
+            foreach($this->players as $player)
+                $player->send('hand', array('card' => array()));
         }
 
         foreach($this->players as $player){
@@ -200,8 +212,8 @@ class SevenWonders {
         switch($args['messageType']){
             case 'cardignore':
                 $card = $args['card'];
-                // First handle if you ignore the selected card (default)
-                if (isset($user->state) &&
+                    // First handle if you ignore the selected card (default)
+                if (isset($user->state) && isset($user->selectedCard) &&
                     $user->selectedCard->getName() == $card) {
                     unset($user->state);
                     unset($user->selectedCard);
@@ -224,6 +236,17 @@ class SevenWonders {
                 // TODO: this means that a refreshed game with a selected card
                 // won't be able to play any new cards because the card
                 // selection isn't pushed back to the user in the game info sent
+                if(isset($user->state) and $user->state == Player::USINGDISCARD){
+                    foreach($this->discard as $card)
+                        if($card->getName() == $args['value'][0])
+                            $foundCard = $card;
+                    if(!isset($foundCard)) break;
+                    $user->selectedCard = $foundCard;
+                    $user->pendingCost = array();
+                    $this->playCards(true);
+                    break;
+                }
+
                 if (isset($user->state) &&
                     ($this->turn != 6 ||
                      !$user->canPlayTwo() ||
@@ -285,6 +308,7 @@ class SevenWonders {
 
 
             case 'wonderside':
+                if($this->wondersChosen) break;
                 $side = $args['value'] == true ? 'a' : 'b';
                 $user->wonderSide = $side;
                 foreach($this->wonders as $wonder){
@@ -306,6 +330,7 @@ class SevenWonders {
 
                 if($allChosen){
                     $this->log("All wonders chosen, dealing hands");
+                    $this->wondersChosen = true; //todo: incorporate this into some sort of state var
                     $this->deal();
                 }
                 break;
