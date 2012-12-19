@@ -77,7 +77,7 @@ class SevenWonders {
 
         // set up the start conditions
         $wonderKeys = array_keys($this->wonders);
-        //shuffle($wonderKeys);
+        shuffle($wonderKeys);
         foreach($this->players as $player){
             // starting moneyz
             $player->coins = 3;
