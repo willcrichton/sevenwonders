@@ -145,30 +145,44 @@ class Player {
     }
 
     public function calcPoints(){
-        $total = $this->points;                 // blue cards
-        $total += floor($this->coins / 3);      // coins
-        $total += $this->military->points();    // military
-        $total += $this->science->points();     // science
+        $points = array(
+            'coins' => floor($this->coins / 3),
+            'wonder' => 0,
+            Card::BLUE => 0,
+            Card::GREEN => $this->science->points(),
+            Card::RED => $this->military->points(),
+            Card::YELLOW => 0,
+            Card::PURPLE => 0,
+            Card::BROWN => 0,
+            Card::GREY => 0
+        );
 
-        // 3rd age yellow cards + guild cards (others all return 0)
-        foreach($this->cardsPlayed as $card)
-            $total += $card->points($this);
+        foreach($this->cardsPlayed as $card){
+            $points[$card->getColor()] += $card->points($this);
+        }
+
+        for($i = 0; $i < $this->wonderStage; $i++){
+            $stage = $this->wonder['stages'][$i];
+            if (isset($stage['points']))
+                $points['wonder'] += $stage['points'];
+        }
 
         // if player has guild card stealing wonder
         if($this->canStealGuild){
-            // caluculate maximum points
+            // calculate maximum points
             $cards = array_merge($this->leftPlayer->cardsPlayed, 
                                  $this->rightPlayer->cardsPlayed);
             $max = 0;
+            // todo: include science guild in calculations
             foreach($cards as $card){
                 if($card->getColor() == Card::PURPLE)
                     $max = max($card->points($this), $max);
             }
 
-            $total += $max;
+            $points['wonder'] += $max;
         }
 
-        return $total;
+        return $points;
     }
 
     public function addDiscount($dir, Resource $res) {
@@ -315,8 +329,6 @@ class Player {
             $this->military->add($stage['military']);
         if (isset($stage['coins']))
             $this->addCoins($stage['coins']);
-        if (isset($stage['points']))
-            $this->points += $stage['points'];
         if (isset($stage['science']))
             $this->science->add(Science::ANY); // only babylon for now
         if (isset($stage['resource']))
