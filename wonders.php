@@ -191,7 +191,12 @@ class SevenWonders {
 
                 $this->age++;
                 $this->turn = 1;
-                $this->deal();
+
+                if($this->age == 4){
+                    $this->endGame();
+                } else {
+                    $this->deal();
+                }
             } else {
                 // change hands and start a new turn
                 $this->log("Ending turn " . $this->turn);
@@ -204,7 +209,8 @@ class SevenWonders {
         }
 
         foreach($this->players as $player){
-            $this->log("{$player->info()} has {$player->calcPoints()} points");
+            $points = array_sum($player->calcPoints());
+            $this->log("{$player->info()} has $points points");
         }
     }
 
@@ -363,6 +369,14 @@ class SevenWonders {
             $count++;
         }
         return $count == count($this->players);
+    }
+
+    private function endGame(){
+        $scores = array();
+        foreach($this->players as $player){
+            $scores[$player->id()] = $player->calcPoints();
+        }
+        $this->server->broadcast('scores', $scores);
     }
 }
 
