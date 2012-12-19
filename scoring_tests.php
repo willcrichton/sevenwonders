@@ -151,12 +151,13 @@ test($s1->points() == 26);
 
 // Test playing cards
 function card($csv, $age = 1) {
-    return WonderCard::import($age, str_getcsv($csv))[0];
+    return Card::import($age, str_getcsv($csv))[0];
 }
 function testcard($csv, $age, $callback) {
     $player = new Player('id', 4);
     $player->setGame(null); // initialize game fields
     $card = card($csv, $age);
+    $player->cardsPlayed[] = $card;
     $card->play($player);
     $callback($player);
 }
@@ -191,7 +192,7 @@ testcard(',,brown,yard,S/T,,,1,2,2,2,2', 1, function($player) {
 
 // Point cards should just add points
 testcard(',,blue,yard,4,,,1,2,2,2,2', 1, function($player) {
-    test($player->points == 4);
+    test($player->calcPoints()['blue'] == 4);
 });
 
 // Military cards should add military!
@@ -218,18 +219,18 @@ testcard(',,yellow,yard,G/P/L,,,1,2,2,2,2', 2, function($player) {
 testcard(',,brown,yard,G,,,1,2,2,2,2', 2, function($player) {
     $other = new Player('f', 5);
     $other->cardsPlayed[] =
-        WonderCard::import(1, str_getcsv(',,brown,yard,G,,,1,1,1,1,1,'))[0];
+        Card::import(1, str_getcsv(',,brown,yard,G,,,1,1,1,1,1,'))[0];
     $player->cardsPlayed[] = $other->cardsPlayed[0];
     $player->leftPlayer = $other;
     $player->rightPlayer = $other;
-    $card = WonderCard::import(2, str_getcsv(',,yellow,f,<V> brown 1,,,1,1,1,1,1'))[0];
+    $card = Card::import(2, str_getcsv(',,yellow,f,<V> brown 1,,,1,1,1,1,1'))[0];
     test($player->coins == 0);
     $card->play($player);
-    test($player->coins == 3);
+    test($player->coins == 4);
 });
 // third-age yellow coin-gain card
 testcard(',,yellow,yard,(1){1} yellow,,,1,2,2,2,2', 3, function($player) {
-    test($player->coins == 1);
+    test($player->coins == 2);
 });
 
 $forum = card('East Trading Post,CC,yellow,Forum,L/G/P,Haven,,1,1,1,2,3');
