@@ -191,7 +191,7 @@ class Card {
                         $color = $args[1];
                         $mult = intval($args[2]);
                         foreach($directions as $dir){
-                            $pl = $dir == 'left' ? $user->leftPlayer : ($dir == 'right' ? $user->rightPlayer : $user);
+                            $pl = $user->neighbor($dir);
                             foreach($pl->cardsPlayed as $c){
                                 if($c->getColor() == $color)
                                     $coins += $mult;
@@ -239,60 +239,65 @@ class Card {
     }
 
     public function points(Player $player) {
-        if ($this->age != 3)
-            return 0;
-        if ($this->color == 'yellow') {
-            $mult = $this->thirdAgeYellowPoints();
-            $color = $this->thirdAgeYellowColor();
-            $sum = 0;
-            if($color == 'wonder'){
-                $sum = $player->wonderStage;
-            } else {
-                foreach($player->cardsPlayed as $c){
-                    if ($c->color == $color)
-                        $sum += $mult;
+        switch($this->color){
+            case Card::YELLOW:
+                if($this->age != 3) return 0;
+                $mult = $this->thirdAgeYellowPoints();
+                $color = $this->thirdAgeYellowColor();
+                $sum = 0;
+                if($color == 'wonder'){
+                    $sum = $player->wonderStage;
+                } else {
+                    foreach($player->cardsPlayed as $c){
+                        if ($c->color == $color)
+                            $sum += $mult;
+                    }
                 }
-            }
-            return $sum;
-        }
-        if (!$this->isGuild() || $this->getName() == "Scientists Guild")
-            return 0;
+                return $sum;
 
-        $args = explode(' ', $this->command);
-        $color = $args[1];
-        $mult = intval($args[2]);
-        $total = 0;
-        /************* THIS NEEDS TO BE TESTED ****************/
-        foreach(arrowsToDirection($args[0]) as $dir){
-            $pl = $player->neighbor($dir);
-            switch ($color) {
-                // $mult points for each military loss
-                case '-1':
-                    $total += $mult * $pl->military->losses();
-                    break;
-                // $mult points for each wonder stage built
-                case 'wonder':
-                    $total += $mult * $pl->wonderStage;
-                    break;
-                // $mult points for each brown/grey/blue card
-                case 'brown,grey,blue':
-                    foreach (explode(',', $color) as $subcolor) {
-                        foreach ($pl->cardsPlayed as $c) {
-                            if ($c->getColor() == $color)
-                                $total += $mult;
-                        }
+            case Card::PURPLE:
+                if($this->getName() == "Scientists Guild") return 0;
+                $args = explode(' ', $this->command);
+                $color = $args[1];
+                $mult = intval($args[2]);
+                $total = 0;
+                /************* THIS NEEDS TO BE TESTED ****************/
+                foreach(arrowsToDirection($args[0]) as $dir){
+                    $pl = $player->neighbor($dir);
+                    switch ($color) {
+                        // $mult points for each military loss
+                        case '-1':
+                            $total += $mult * $pl->military->losses();
+                            break;
+                        // $mult points for each wonder stage built
+                        case 'wonder':
+                            $total += $mult * $pl->wonderStage;
+                            break;
+                        // $mult points for each brown/grey/blue card
+                        case 'brown,grey,blue':
+                            foreach (explode(',', $color) as $subcolor) {
+                                foreach ($pl->cardsPlayed as $c) {
+                                    if ($c->getColor() == $color)
+                                        $total += $mult;
+                                }
+                            }
+                            break;
+                        // $mult cards for each $color card played
+                        default:
+                            foreach($pl->cardsPlayed as $c){
+                                if($c->getColor() == $color)
+                                    $total += $mult;
+                            }
+                            break;
                     }
-                    break;
-                // $mult cards for each $color card played
-                default:
-                    foreach($pl->cardsPlayed as $c){
-                        if($c->getColor() == $color)
-                            $total += $mult;
-                    }
-                    break;
-            }
+                }
+                return $total;
+
+            case Card::BLUE:
+                return intval($this->command);
         }
-        return $total;
+
+        return 0;
     }
 
     public function json() {
