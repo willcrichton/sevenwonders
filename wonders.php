@@ -34,14 +34,14 @@ class SevenWonders {
 
                 if (isset($value['resource']))
                     $value['resource'] =
-                        WonderCard::csvResources($value['resource'], true)[0];
+                        Card::csvResources($value['resource'], true)[0];
 
                 foreach ($value['stages'] as &$stage) {
                     if (isset($stage['resource']))
                         $stage['resource'] =
-                            WonderCard::csvResources($stage['resource'], false)[0];
+                            Card::csvResources($stage['resource'], false)[0];
                     $stage['requirements'] =
-                        WonderCard::csvResources($stage['requirements'], false);
+                        Card::csvResources($stage['requirements'], false);
                 }
             }
         }

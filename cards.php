@@ -10,7 +10,7 @@ function arrowsToDirection($str){
     return $directions;
 }
 
-class WonderCard {
+class Card {
     const BLUE = 'blue';
     const GREEN = 'green';
     const YELLOW = 'yellow';
@@ -84,8 +84,8 @@ class WonderCard {
 
     public static function import($age, $csv) {
         $cards = array();
-        foreach (WonderCard::csvNumPlayers($csv) as $nplayers) {
-            $card = new WonderCard();
+        foreach (Card::csvNumPlayers($csv) as $nplayers) {
+            $card = new Card();
             $card->age        = $age;
             $card->name       = $csv[3];
             $card->color      = $csv[2];
@@ -94,7 +94,7 @@ class WonderCard {
 
             $card->moneyCost = preg_match('/([0-9])/', $csv[1], $matches) ?
                 $matches[1] : 0;
-            $card->resourceCost = WonderCard::csvResources($csv[1], true);
+            $card->resourceCost = Card::csvResources($csv[1], true);
             $card->numPlayers = $nplayers;
             if (getenv('DEBUG')) {
                 $card->numPlayers = 1; // use all cards in development
@@ -134,7 +134,7 @@ class WonderCard {
         return $this->numPlayers;
     }
 
-    function hasPrereq(WonderCard $card) {
+    function hasPrereq(Card $card) {
         // Stupid forum actually has two prerequisites
         if ($this->name == 'Forum')
             return strstr($card->name, 'Trading Post') !== false;
@@ -159,22 +159,22 @@ class WonderCard {
 
     function play(Player $user){
         switch($this->color){
-            case 'red':
+            case Card::RED:
                 $user->military->add(intval($this->command));
                 break;
 
-            case 'blue':
-                $user->points += intval($this->command);
+            case Card::BLUE:
+                // do nothing, calculate points later (see Player::calcPoints)
                 break;
 
-            case 'yellow':
+            case Card::YELLOW:
                 if ($this->getAge() == 1) {
                     if (preg_match('/[0-9]/', $this->command)) {
                         $user->addCoins(intval($this->command));
                     } else {
                         $args = explode(' ', $this->command);
                         $directions = arrowsToDirection($args[0]);
-                        $resources = WonderCard::csvResources($args[1], false);
+                        $resources = Card::csvResources($args[1], false);
                         foreach ($resources as $resource)
                             foreach ($directions as $dir)
                                 $user->addDiscount($dir, $resource);
@@ -182,7 +182,7 @@ class WonderCard {
                 } elseif($this->getAge() == 2) {
                     // check for yellow non-buyable resources
                     if(strpos($this->command, '/') !== false){
-                        $res = WonderCard::csvResources($this->command, false);
+                        $res = Card::csvResources($this->command, false);
                         $user->addResource($res[0]);
                     } else {
                         $args = explode(' ', $this->command);
@@ -303,7 +303,7 @@ class WonderCard {
     }
 }
 
-class WonderDeck {
+class Deck {
     private $cards = array();
     private $guilds = array();
     private $hands = array();
@@ -350,12 +350,12 @@ class WonderDeck {
     private function importAge($age) {
         $lines = explode("\r", file_get_contents("cards/age$age.csv"));
         foreach ($lines as $line){
-            $this->addCards(WonderCard::import($age, str_getcsv($line)));
+            $this->addCards(Card::import($age, str_getcsv($line)));
         }
     }
 }
 
-$deck = new WonderDeck();
+$deck = new Deck();
 $deck->import();
 
 ?>

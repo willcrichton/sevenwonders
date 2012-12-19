@@ -233,7 +233,7 @@ class Player {
         $this->send('joingame', array('players' => $players));
     }
 
-    public function findCost(WonderCard $card, $type) {
+    public function findCost(Card $card, $type) {
         $possibilities = $this->calculateCost($card, $type);
 
         // Save off what we just calculated so we can verify a cost strategy
@@ -245,7 +245,7 @@ class Player {
         $this->send('possibilities', array('combs' => $possibilities));
     }
 
-    private function calculateCost(WonderCard $card, $type) {
+    private function calculateCost(Card $card, $type) {
         if ($type == 'play') {
             // check for duplicates
             foreach ($this->cardsPlayed as $cardPlayed)
@@ -293,7 +293,7 @@ class Player {
         return $possible;
     }
 
-    public function cardCost(WonderCard $card, $selection, $type){
+    public function cardCost(Card $card, $selection, $type){
         // Make sure we've pre-calculated the cost of this card and that the
         // specified selection is in bounds
         if (!isset($this->possibilities[$card->getName()]))
@@ -371,7 +371,7 @@ class Player {
                                         $this->state == self::USINGDISCARD);
     }
 
-    public function playCard(SevenWonders $game, WonderCard $card, $state,
+    public function playCard(SevenWonders $game, Card $card, $state,
                              $costarr) {
         switch ($state) {
             case Player::TRASHING:
