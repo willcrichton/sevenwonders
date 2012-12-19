@@ -17,9 +17,30 @@ var SevenWonders = function(socket, args){
     this.cardHeight = 190;
     this.hasfree = false; // has a free card from olympia's wonder
     this.hastwo = false;  // can play second card from babylon's wonder
+    this.scale = 1;
+
+    var self = this;
+
+    // size game div acccording to browser size
+    $("#game").css({width: Math.max($(window).width(), 1420), height: Math.max($(window).height(), 730)});
+    
+    $(window).resize(function(){
+        if($(this).width() < 1420){
+            self.scale = $(this).width() / 1420;
+            $('#game').css({
+                '-webkit-transform': 'scale(' + self.scale + ')',
+                'margin-left': -1 * (1 - self.scale) * $('#game').width() / 2
+            });
+        } else {
+            $('#game').css({
+                '-webkit-transform': '',
+                'margin-left': 0
+            })
+        }
+    });
+    $(window).resize();
 
     // select wonder image here (load in appropriately)
-    var self = this;
     if(typeof args.wonder.resource == 'undefined'){ // hacky way of checking if player refreshed in middle of wonder picking
         $('#setup-container').fadeIn(1000);
         $('#setup p strong').html(this.wonder.name.capitalize());
@@ -314,7 +335,7 @@ SevenWonders.prototype = {
 
         console.log(card, card.data('cardInfo'));
 
-        var infoPos = $('#wonder').position();
+        var infoPos = $('#wonder').offset();
         var cardColor = card.data('cardInfo').color;
         var index = this.colorOrder.indexOf(cardColor);
         var numInColor = 0;
@@ -324,8 +345,8 @@ SevenWonders.prototype = {
         card.find('.options, h1').css('display', 'none');
         card.css('z-index', 100 - numInColor);
         var opts = {
-            left: infoPos.left - 400 + index * 135,
-            bottom: $('#game').height() - infoPos.top - 155 + numInColor * 40 - (cardColor == 'blue' ? 93 : 0),
+            left: infoPos.left / this.scale + index * 135,
+            bottom: ($('#game').height() - infoPos.top - 155) * this.scale + numInColor * 40 - (cardColor == 'blue' ? 93 : 0),
             width: this.cardWidth,
             height: this.cardHeight,
             opacity: 1,
@@ -507,7 +528,7 @@ SevenWonders.prototype = {
                     if($(this).hasClass('ignore')) return;
                     var deg = (cardIndex(this) + 0.5 - numCards / 2) * 8;
                     $(this).css({
-                        'left': $('#wonder').position().left - 75,
+                        'left': $('#wonder').offset().left / self.scale + $('#wonder').width() / 2 - 75,
                         'bottom': -200
                     });
                     $(this).rotate(deg);
