@@ -745,6 +745,13 @@ SevenWonders.prototype = {
                 }
                 break;
 
+            case 'playerinfo':
+                // when we send a request for playerinfo by id, we get back an array of info
+                // args.cards = played cards, args.coins = current coins, args.wonder = wonder info
+                // args.wonder has args.wonder.name and args.wonder.stage
+                console.log("Received playerinfo", args);
+                break;
+
             default:
                 console.log(args, msg);
                 break;

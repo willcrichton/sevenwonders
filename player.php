@@ -70,6 +70,15 @@ class Player {
         return "User {$this->name()} ({$this->id()})";
     }
 
+    public function getPublicInfo(){
+        return array(
+            'cards' => array_map(function($c) { return $c->json(); }, $this->cardsPlayed),
+            'coins' => $this->coins,
+            'wonder' => array("name" => $this->wonderName,
+                              "stage" => $this->wonderStage)
+        );
+    }
+
     public function setGame($game) {
         if ($this->_game != null)
             throw new Exception("already in a game");

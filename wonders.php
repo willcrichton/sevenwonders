@@ -335,6 +335,16 @@ class SevenWonders {
                 }
                 break;
 
+            case 'playerinfo':
+                $token = $args['value'];
+                foreach($this->players as $player){
+                    if($player->id() == $token){
+                        $user->send('playerinfo', $player->getPublicInfo());
+                        break;
+                    }
+                }
+                break;
+
             default:
                 echo "Undefined message\n";
                 print_r($args);
