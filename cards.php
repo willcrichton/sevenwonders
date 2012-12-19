@@ -11,6 +11,14 @@ function arrowsToDirection($str){
 }
 
 class WonderCard {
+    const BLUE = 'blue';
+    const GREEN = 'green';
+    const YELLOW = 'yellow';
+    const PURPLE = 'purple';
+    const GREY = 'grey';
+    const RED = 'red';
+    const BROWN = 'brown';
+
     private $name;
     private $color;
     private $moneyCost;
@@ -24,7 +32,7 @@ class WonderCard {
     static function csvNumPlayers($fields){
         // All guilds only have one copy and have a special way of being added
         // to the deck, so we don't deal with that here
-        if ($fields[2] == 'purple')
+        if ($fields[2] == Card::PURPLE)
             return array(1);
 
         // Otherwise columns 7-11 imply that with N-4 people, there should be K
@@ -107,7 +115,7 @@ class WonderCard {
     }
 
     function isGuild(){
-        return $this->color == 'purple';
+        return $this->color == Card::PURPLE;
     }
 
     function getMoneyCost(){
@@ -196,7 +204,7 @@ class WonderCard {
                     $color = $this->thirdAgeYellowColor();
                     // Be sure to count this yellow card for coin increase if
                     // we get coins per yellow card.
-                    $coinsToGive = ($color == 'yellow' ? $coins : 0);
+                    $coinsToGive = ($color == Card::YELLOW ? $coins : 0);
                     if ($color == 'wonder') {
                         $coinsToGive = $coins * $user->wonderStage;
                     } else {
@@ -211,11 +219,11 @@ class WonderCard {
                 }
                 break;
 
-            case 'green':
+            case Card::GREEN:
                 $user->science->add(intval($this->command));
                 break;
 
-            case 'purple':
+            case Card::PURPLE:
                 if ($this->getName() == 'Scientists Guild') {
                     $user->science->add(Science::ANY);
                 }
@@ -223,8 +231,8 @@ class WonderCard {
                 // until the end
                 break;
 
-            case 'brown': case 'grey':
-                foreach (WonderCard::csvResources($this->command, true) as $r)
+            case Card::BROWN: case Card::GREY:
+                foreach (Card::csvResources($this->command, true) as $r)
                     $user->addResource($r);
                 break;
         }

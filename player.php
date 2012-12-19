@@ -161,7 +161,7 @@ class Player {
                                  $this->rightPlayer->cardsPlayed);
             $max = 0;
             foreach($cards as $card){
-                if($card->getColor() == 'purple')
+                if($card->getColor() == Card::PURPLE)
                     $max = max($card->points($this), $max);
             }
 
