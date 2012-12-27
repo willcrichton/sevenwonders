@@ -228,6 +228,14 @@ h1, h2, h3 {
             opacity: 0.4;
         }
 
+        .neighbor > img {
+            width: 50px;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            margin-left: -25px;
+        }
+
         .neighbor.left {
             border-right: 2px solid #CCB593;
             background: rgba(204, 179, 147, 0.9);

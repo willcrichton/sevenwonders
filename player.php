@@ -219,12 +219,21 @@ class Player {
             "wonderside" => $this->wonderSide,
             "plinfo" => $playerInfo,
             "military" => $this->military->json(),
-            "neighbors" => array('left' => $this->leftPlayer->id(),
-                                 'right' => $this->rightPlayer->id()),
+            "neighbors" => array('left' => array(
+                                    'id' => $this->leftPlayer->id(),
+                                    'resource' => isset($this->leftPlayer->wonder) ? 
+                                                  $this->leftPlayer->wonder['resource']->json() : ''
+                                 ),
+                                 'right' => array(
+                                    'id' => $this->rightPlayer->id(),
+                                    'resource' => isset($this->rightPlayer->wonder) ? 
+                                                  $this->rightPlayer->wonder['resource']->json() : ''
+                                 )
+                                ),
             'leftcards' => array_map($tojson, $this->leftPlayer->cardsPlayed),
             'rightcards' => array_map($tojson, $this->rightPlayer->cardsPlayed),
             'played' => array_map($tojson, $this->cardsPlayed),
-            'rejoin' => $isRejoin
+            'rejoin' => $isRejoin,
         );
         $this->send("startinfo", $startInfo);
         if ($this->hasFreeCard)

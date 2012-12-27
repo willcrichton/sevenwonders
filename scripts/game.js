@@ -23,7 +23,7 @@ var SevenWonders = function(socket, args){
 
     // size game div acccording to browser size
     $("#game").css({width: Math.max($(window).width(), 1420), height: Math.max($(window).height(), 730)});
-    
+
     $(window).resize(function(){
         if($(this).width() < 1420){
             self.scale = $(this).width() / 1420;
@@ -65,6 +65,7 @@ var SevenWonders = function(socket, args){
     if(args.rejoin == true){
         $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + this.wonderSide + '.png) no-repeat center center');
         this.updateMilitary(args.military);
+        this.showWonderResources();
         var i;
         for (i = 0; i < args.leftcards.length; i++)
             this.updateColumn('left', args.leftcards[i].color,
@@ -484,6 +485,11 @@ SevenWonders.prototype = {
         card.find('.options, .slider').css('display', 'none');
     },
 
+    showWonderResources: function(){
+        $('.neighbor.left > img').attr('src', 'images/tokens/' + this.neighbors.left.resource + '.png');
+        $('.neighbor.right > img').attr('src', 'images/tokens/' + this.neighbors.right.resource + '.png');
+    },
+
     // handle all the different messages sent from the server
     onMessage: function(args, msg){
         switch(args.messageType){
@@ -771,6 +777,12 @@ SevenWonders.prototype = {
                 // args.cards = played cards, args.coins = current coins, args.wonder = wonder info
                 // args.wonder has args.wonder.name and args.wonder.stage
                 console.log("Received playerinfo", args);
+                break;
+
+            case 'neighborresources':
+                this.neighbors.left.resource = args.left;
+                this.neighbors.right.resource = args.right;
+                this.showWonderResources();
                 break;
 
             default:
