@@ -486,8 +486,15 @@ SevenWonders.prototype = {
     },
 
     showWonderResources: function(){
-        $('.neighbor.left > img').attr('src', 'images/tokens/' + this.neighbors.left.resource + '.png');
-        $('.neighbor.right > img').attr('src', 'images/tokens/' + this.neighbors.right.resource + '.png');
+        $('.neighbor.left .info img.resource').attr('src', 'images/tokens/' + this.neighbors.left.resource + '.png');
+        $('.neighbor.right .info img.resource').attr('src', 'images/tokens/' + this.neighbors.right.resource + '.png');
+        $('.neighbor.left .info div.stage').css('background-image', 'url(images/tokens/pyramid-stage' + this.neighbors.left.stage + '.png)');
+        $('.neighbor.right .info div.stage').css('background-image', 'url(images/tokens/pyramid-stage' + this.neighbors.right.stage + '.png)');
+
+        $('.neighbor.left .info').css('background-image', 'url(images/wonders/' + this.neighbors.left.wonder + 'A.png)');
+        $('.neighbor.left .info').addClass(this.neighbors.left.wonder);
+        $('.neighbor.right .info').css('background-image', 'url(images/wonders/' + this.neighbors.right.wonder + 'A.png)');
+        $('.neighbor.right .info').addClass(this.neighbors.right.wonder);
     },
 
     // handle all the different messages sent from the server
@@ -779,10 +786,24 @@ SevenWonders.prototype = {
                 console.log("Received playerinfo", args);
                 break;
 
-            case 'neighborresources':
-                this.neighbors.left.resource = args.left;
-                this.neighbors.right.resource = args.right;
+            case 'neighborwonders':
+                this.neighbors.left.resource = args.left.resource;
+                this.neighbors.right.resource = args.right.resource;
+                this.neighbors.left.stage = 0;
+                this.neighbors.right.stage = 0;
+                this.neighbors.left.wonder = args.left.wonder;
+                this.neighbors.right.wonder = args.right.wonder;
+                console.log(args);
                 this.showWonderResources();
+                break;
+
+            case 'builtwonder':
+                for(i in this.neighbors){
+                    if(this.neighbors[i].id == args.id){
+                        console.log('.neighbor.' + i + ' .info div.stage', 'url(images/tokens/pyramid-stage' + args.stage + '.png)')
+                        $('.neighbor.' + i + ' .info div.stage').css('background-image', 'url(images/tokens/pyramid-stage' + args.stage + '.png)');
+                    }
+                }
                 break;
 
             default:

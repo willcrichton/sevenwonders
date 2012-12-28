@@ -228,13 +228,34 @@ h1, h2, h3 {
             opacity: 0.4;
         }
 
-        .neighbor > img {
-            width: 50px;
+        .neighbor .info {
             position: absolute;
-            top: 10px;
-            left: 50%;
-            margin-left: -25px;
+            top: 0;
+            padding-left: 15px;
+            background-repeat: no-repeat;
+            background-position: -428px -40px;
+            padding: 7px 13px;
+            overflow: auto;
         }
+
+            .neighbor .info.alexandria { background-position: -248px -20px; }
+            .neighbor .info.halikarnassus { background-position: -188px -60px; }
+            .neighbor .info.gizah { background-position: -258px -20px; }
+
+            .neighbor .info > * {
+                width: 50px;
+                float: left;
+            }
+
+            .neighbor .info div.stage {
+                border-radius: 50px;
+                background: rgba(196, 187, 172, 0.7) url(../images/tokens/pyramid-stage0.png) no-repeat center center;
+                border: 3px solid #85765A;
+                height: 50px;
+                margin-left: 5px;
+                width: 46px;
+                height: 46px;
+            }
 
         .neighbor.left {
             border-right: 2px solid #CCB593;

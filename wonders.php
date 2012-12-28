@@ -338,9 +338,15 @@ class SevenWonders {
                     $this->log("All wonders chosen, dealing hands");
                     $this->wondersChosen = true; //todo: incorporate this into some sort of state var
                     foreach($this->players as $player){
-                        $player->send('neighborresources', array(
-                            'left' => $player->leftPlayer->wonder['resource']->json(),
-                            'right' => $player->rightPlayer->wonder['resource']->json()
+                        $player->send('neighborwonders', array(
+                            'left' => array(
+                                'wonder' => $player->leftPlayer->wonderName,
+                                'resource' => $player->leftPlayer->wonder['resource']->json(),
+                            ),
+                            'right' => array(
+                                'wonder' => $player->rightPlayer->wonderName,
+                                'resource' => $player->rightPlayer->wonder['resource']->json()
+                            )
                         ));
                     }
                     $this->deal();

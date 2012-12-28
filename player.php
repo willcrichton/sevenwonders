@@ -222,12 +222,16 @@ class Player {
             "neighbors" => array('left' => array(
                                     'id' => $this->leftPlayer->id(),
                                     'resource' => isset($this->leftPlayer->wonder) ? 
-                                                  $this->leftPlayer->wonder['resource']->json() : ''
+                                                  $this->leftPlayer->wonder['resource']->json() : '',
+                                    'stage' => $this->leftPlayer->wonderStage,
+                                    'wonder' => $this->leftPlayer->wonderName
                                  ),
                                  'right' => array(
                                     'id' => $this->rightPlayer->id(),
                                     'resource' => isset($this->rightPlayer->wonder) ? 
-                                                  $this->rightPlayer->wonder['resource']->json() : ''
+                                                  $this->rightPlayer->wonder['resource']->json() : '',
+                                    'stage' => $this->rightPlayer->wonderStage,
+                                    'wonder' => $this->rightPlayer->wonderName
                                  )
                                 ),
             'leftcards' => array_map($tojson, $this->leftPlayer->cardsPlayed),
@@ -408,6 +412,12 @@ class Player {
 
             case Player::BUILDING:
                 $this->playWonderStage();
+                $info = array(
+                    'id' => $this->id(),
+                    'stage' => $this->wonderStage
+                );
+                $this->leftPlayer->send('builtwonder', $info);
+                $this->rightPlayer->send('builtwonder', $info);
                 break;
 
             case Player::USINGFREE:
