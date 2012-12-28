@@ -334,8 +334,6 @@ SevenWonders.prototype = {
             return;
         }
 
-        console.log(card, card.data('cardInfo'));
-
         var infoPos = $('#wonder').offset();
         var cardColor = card.data('cardInfo').color;
         var index = this.colorOrder.indexOf(cardColor);
@@ -497,6 +495,24 @@ SevenWonders.prototype = {
         $('.neighbor.right .info').addClass(this.neighbors.right.wonder);
     },
 
+    cleanHand: function(){
+        // Ignore all remaining cards on the board
+        $('.card').addClass('ignore');
+        $('.card:not(.highlighted, .played)').fadeOut(500, function(){
+            $(this).remove();
+        });
+
+        // Use self to refer to SevenWonder object in callbacks/other scopes
+        var self = this;
+        // move selected card to board for later reference
+        var selected = $('.card.highlighted');
+        if(selected.length){
+            $.each(selected, function(_, card) {
+                self.moveToBoard($(card), true);
+            });
+        }
+    },
+
     // handle all the different messages sent from the server
     onMessage: function(args, msg){
         switch(args.messageType){
@@ -504,21 +520,8 @@ SevenWonders.prototype = {
             case 'hand':
                 args.cards = $.map(args.cards || {}, function(k,v){ return [k]; });
 
-                // Ignore all remaining cards on the board
-                $('.card').addClass('ignore');
-                $('.card:not(.highlighted, .played)').fadeOut(500, function(){
-                    $(this).remove();
-                });
-
-                // Use self to refer to SevenWonder object in callbacks/other scopes
+                this.cleanHand();
                 var self = this;
-                // move selected card to board for later reference
-                var selected = $('.card.highlighted');
-                if(selected.length){
-                    $.each(selected, function(_, card) {
-                        self.moveToBoard($(card), true);
-                    });
-                }
 
                 // Insert new hand into the board
                 var count = args.cards.length;
@@ -773,7 +776,6 @@ SevenWonders.prototype = {
                 break;
 
             case 'discard':
-                console.log("discard", args);
                 if(args.cards != null && args.cards.length > 0){
                     this.showCardSelect(args.cards, true);
                 }
@@ -793,16 +795,34 @@ SevenWonders.prototype = {
                 this.neighbors.right.stage = 0;
                 this.neighbors.left.wonder = args.left.wonder;
                 this.neighbors.right.wonder = args.right.wonder;
-                console.log(args);
                 this.showWonderResources();
                 break;
 
             case 'builtwonder':
                 for(i in this.neighbors){
                     if(this.neighbors[i].id == args.id){
-                        console.log('.neighbor.' + i + ' .info div.stage', 'url(images/tokens/pyramid-stage' + args.stage + '.png)')
                         $('.neighbor.' + i + ' .info div.stage').css('background-image', 'url(images/tokens/pyramid-stage' + args.stage + '.png)');
                     }
+                }
+                break;
+
+            case 'scores':
+                this.cleanHand();
+                $('#setup-container').fadeIn(1000);
+                $('#setup :not(h1)').remove();
+                $('#setup h1').html('SCORES');
+                var fields = ['name', 'red', 'coins', 'wonder', 'blue', 'yellow', 'purple', 'green', 'total']
+                $('#setup').append('<table id="scores"></table>');     
+                for(var i = 0; i < fields.length; i++){
+                    var field = fields[i];
+                    var tr = $('<tr></tr>');
+                    tr.append('<th class="' + field + '">' + (field == 'total' ? '&Sigma;' : '') + '</th>');
+                    for(var j = 0; j < this.players.length; j++){
+                        var pl = this.players[j];
+                        if(field == 'name') tr.append('<td>' + pl.name + '</td>');
+                        else tr.append('<td>' + args[pl.id][field] + '</td>');
+                    }
+                    $('#scores').append(tr);
                 }
                 break;
 

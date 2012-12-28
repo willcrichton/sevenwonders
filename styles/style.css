@@ -515,3 +515,33 @@ h1, h2, h3 {
                 height: 65px;
                 margin-top: 0;
             }
+
+    #scores {
+        margin: 0 auto;
+        font-size: 24px;
+    }
+
+        #scores td, #scores th {
+            padding: 6px 15px;
+        }
+
+        #scores th {
+            text-align: center;
+        }
+
+            #scores th.red { background: red; }
+            #scores th.coins { background: url(../images/tokens/coin.png) no-repeat center center; }
+            #scores th.wonder { background: url(../images/tokens/pyramid.png) no-repeat center center;; }
+            #scores th.blue { background: #1B42E0; }
+            #scores th.yellow { background: #E0DD1B; }
+            #scores th.purple { background: purple; }
+            #scores th.green { background: green; }
+            #scores th.total { background: black; color: white; }
+
+        #scores tr:nth-child(odd){
+            background: #f2f2f2;
+        }
+
+        #scores tr:nth-child(even){
+            background: #ddd;
+        }

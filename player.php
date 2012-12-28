@@ -154,7 +154,8 @@ class Player {
             Card::YELLOW => 0,
             Card::PURPLE => 0,
             Card::BROWN => 0,
-            Card::GREY => 0
+            Card::GREY => 0,
+            'total' => 0
         );
 
         foreach($this->cardsPlayed as $card){
@@ -181,6 +182,8 @@ class Player {
 
             $points['wonder'] += $max;
         }
+
+        $points['total'] = array_sum($points);
 
         return $points;
     }

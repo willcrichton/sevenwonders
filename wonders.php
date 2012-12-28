@@ -12,8 +12,8 @@ class SevenWonders {
     public $deck;
     public $server;
     public $started = false;
-    public $age = 1;
-    public $turn = 1;
+    public $age = 3;
+    public $turn = 6;
     public $wonders;
     public $wondersChosen = false;
     public $playerInfo;
