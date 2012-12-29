@@ -72,10 +72,14 @@ class Player {
 
     public function getPublicInfo(){
         return array(
+            'id' => $this->_id,
+            'name' => $this->_name,
             'cards' => array_map(function($c) { return $c->json(); }, $this->cardsPlayed),
             'coins' => $this->coins,
             'wonder' => array("name" => $this->wonderName,
-                              "stage" => $this->wonderStage)
+                              "stage" => $this->wonderStage,
+                              "side" => $this->wonderSide),
+            'military' => $this->military->json()
         );
     }
 
@@ -100,6 +104,10 @@ class Player {
         $this->canHaveFreeCard = false;
         $this->hasFreeCard = false;
         $this->canPlayTwoBuilt = false;
+    }
+
+    public function quitGame(){
+        $this->_game = null;
     }
 
     public function game() {
@@ -210,7 +218,11 @@ class Player {
         }
     }
 
-    public function sendStartInfo($playerInfo, $isRejoin = false) {
+    public function sendStartInfo($isRejoin = false) {
+        $playerInfo = array();
+        foreach($this->_game->players as $player){
+            $playerInfo[] = $player->getPublicInfo();
+        }
         $tojson = function($a) { return $a->json(); };
         $wonderInfo = array("name" => $this->wonderName,
                             "stage" => $this->wonderStage);
@@ -250,7 +262,7 @@ class Player {
     }
 
     public function rejoinGame() {
-        $this->sendStartInfo($this->_game->playerInfo, true);
+        $this->sendStartInfo(true);
         $this->sendHand();
     }
 

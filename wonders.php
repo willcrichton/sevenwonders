@@ -98,14 +98,14 @@ class SevenWonders {
             $playerInfo[] = array(
                 'id' => $this->players[$i]->id(),
                 'name' => $this->players[$i]->name(),
-                'order' => $this->players[$i]->order
+                'order' => $this->players[$i]->order,
             );
         }
         $this->playerInfo = $playerInfo;
 
         // send start information
         foreach($this->players as $player){
-            $player->sendStartInfo($playerInfo);
+            $player->sendStartInfo();
         }
     }
 
@@ -354,7 +354,7 @@ class SevenWonders {
                 break;
 
             case 'playerinfo':
-                $token = $args['value'];
+                $token = isset($args['value']) ? $args['value'] : '';
                 foreach($this->players as $player){
                     if($player->id() == $token){
                         $user->send('playerinfo', $player->getPublicInfo());
@@ -387,6 +387,7 @@ class SevenWonders {
         $scores = array();
         foreach($this->players as $player){
             $scores[$player->id()] = $player->calcPoints();
+            $player->quitGame();
         }
         $this->server->broadcast('scores', $scores);
     }

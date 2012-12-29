@@ -155,7 +155,7 @@ h1, h2, h3 {
             box-shadow: 0 0 30px black;
         }
 
-    #wonder {
+    .wonderBoard {
         padding: 10px;
         width: 780px;
         height: 228px;
@@ -170,7 +170,7 @@ h1, h2, h3 {
         /*background: url(wonder.png) no-repeat center center;*/
     }
 
-        #wonder .check {
+        .wonderBoard .check {
             position: absolute;
             width: 50px;
             height: 50px;
@@ -180,30 +180,30 @@ h1, h2, h3 {
             top: 165px;
         }
 
-        #wonder #coins {
+        .wonderBoard .coins {
             position: absolute;
             top: 35px;
             left: 220px;
             width: 460px;
         }
 
-        #coins img.silver {
+        .coins img.silver {
             margin-left: -10px;
         }
 
-        #coins img.gold {
+        .coins img.gold {
             margin-left: -20px;
             margin-top: -5px;
         }
 
-        #wonder #military {
+        .wonderBoard .military {
             position: absolute;
             top: 45px;
             left: 690px;
             width: 90px;
         }
 
-        #military img {
+        .military img {
             margin-left: -10px;
         }
 
@@ -214,6 +214,7 @@ h1, h2, h3 {
         position: absolute;
         overflow: hidden;
         top: 0;
+        cursor: pointer;
     }
 
         .neighbor h1 {
@@ -228,26 +229,37 @@ h1, h2, h3 {
             opacity: 0.4;
         }
 
-        .neighbor .info {
+        .info {
             position: absolute;
             top: 0;
+            width: 107px;
+            height: 52px;
             padding-left: 15px;
             background-repeat: no-repeat;
             background-position: -428px -40px;
             padding: 7px 13px;
             overflow: auto;
+            color: white;
+            text-shadow: 0 0 10px black;
+            text-align: center;
+            font-size: 24px;
         }
 
-            .neighbor .info.alexandria { background-position: -248px -20px; }
-            .neighbor .info.halikarnassus { background-position: -188px -60px; }
-            .neighbor .info.gizah { background-position: -258px -20px; }
+            #game > .info:hover {
+                box-shadow: 0 3px 10px black;
+                cursor: pointer;
+            }
 
-            .neighbor .info > * {
+            .info.alexandria { background-position: -248px -20px; }
+            .info.halikarnassus { background-position: -188px -60px; }
+            .info.gizah { background-position: -258px -20px; }
+
+            .info > * {
                 width: 50px;
                 float: left;
             }
 
-            .neighbor .info div.stage {
+            .info div.stage {
                 border-radius: 50px;
                 background: rgba(196, 187, 172, 0.7) url(../images/tokens/pyramid-stage0.png) no-repeat center center;
                 border: 3px solid #85765A;
@@ -263,6 +275,10 @@ h1, h2, h3 {
             left: 0;
         }
 
+        .neighbor.left:hover {  
+            background: #D1BB9F;
+        }
+
         .neighbor.left h1 {
             left: -10px;
         }
@@ -271,6 +287,10 @@ h1, h2, h3 {
             border-left: 2px solid #C3BBAB;
             background: rgba(196, 187, 172, 0.9);
             right: 0;
+        }
+
+        .neighbor.right:hover {
+            background: #C9C2B5;
         }
 
         .neighbor.right h1 {
@@ -458,7 +478,7 @@ h1, h2, h3 {
     #cardselect {
         display: none;
         overflow: auto;
-        width: 1200px;
+
         margin: 0;
         top: 0;
         left: 0;
@@ -467,6 +487,7 @@ h1, h2, h3 {
         background-color: rgba(0, 0, 0, .7);
         z-index: 10000;
         padding: 50px;
+        overflow: auto;
     }
         #cardwindow {
         	position: relative;
@@ -474,7 +495,8 @@ h1, h2, h3 {
             margin: 0 auto;
             background-color: #CCB280;
             height: 100%;
-            width: 1320px;
+            width: 1135px;
+            float: left;
         }
 
             #cardwindow > h1 {
@@ -491,7 +513,9 @@ h1, h2, h3 {
             #hovercardwindow {
                 background-color: #f2f2f2;
                 height: 100%;
-                margin-left: 1120px;
+                width: 200px;
+                float: left;
+                display: none;
             }
 
 	        .card.hovercard {

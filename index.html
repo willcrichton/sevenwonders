@@ -96,7 +96,7 @@
             var my_id = localStorage.sevenwonders_id || '';
             var my_name = "Guest";
             var status = "lobby";
-            var game = undefined;
+            var game = undefined; 
             $(document).ready(function(){
                 var host = "ws://" + window.location.hostname + ":12345";
                 try {
@@ -209,10 +209,6 @@
                     <p>You were given <strong></strong>. Pick a side of the board to play:</p>
                 </div>
             </div>
-            <div id="wonder">
-                <div id="coins"></div>
-                <div id="military"></div>
-            </div>
             <div class="neighbor left">
                 <h1>LEFT</h1>
                 <div class="info">
@@ -229,9 +225,9 @@
             </div>
             <div id="cardselect">
                 <div id="cardwindow">
-                    <h1></h1>                        
-                    <div id="hovercardwindow"></div>
+                    <h1></h1>                   
                 </div>
+                <div id="hovercardwindow"></div>
             </div>
         </div>
         <!-- co.nr link for niceness -->
