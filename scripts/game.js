@@ -1,3 +1,127 @@
+var WonderBoard = function(args){
+    this.name = args.name;
+    this.coins = args.coins || 0;
+    this.game = args.game;
+    this.wonderSide = args.wonderside || 'a';
+    this.wonderStage = 0;
+
+    this.wonderDiv = $('<div class="wonderBoard"></div>');
+    this.coinDiv = $('<div class="coins"></div>');
+    this.militaryDiv = $('<div class="military"></div>');
+
+    this.wonderDiv.css('background', 'url(images/wonders/' + this.name.toLowerCase() + this.wonderSide + '.png) no-repeat center center');
+
+    this.wonderDiv.append(this.coinDiv);
+    this.wonderDiv.append(this.militaryDiv);
+
+    if(args.miltary)
+        this.updateMilitary(args.military);
+    this.updateCoins(this.coins);
+
+    for (i = 0; i < args.stage; i++)
+        this.buildWonderStage();
+}
+
+WonderBoard.prototype = {
+    updateCoins: function(coins){
+        this.coins = coins;
+
+        var golds = Math.floor(this.coins / 3);
+        var silvers = this.coins % 3;
+        this.coinDiv.html('');
+        for(var i = 0; i < silvers; i++){
+            var rot = (Math.random() - 0.5) * 300;
+            var img = $('<img src="images/tokens/coin1.png" class="silver" />');
+            img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
+            this.coinDiv.append(img);
+        }
+        this.coinDiv.append('<br />');
+
+        for(var i = 0; i < golds; i++){
+            var rot = (Math.random() - 0.5) * 300;
+            var img = $('<img src="images/tokens/coin3.png" class="gold" />');
+            img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
+            this.coinDiv.append(img);
+        }
+    },
+
+    updateMilitary: function(args){
+        this.militaryDiv.html('');
+        var points = {1 : 'victory1', 3: 'victory3', 5: 'victory5'};
+        points[-1] = 'victoryminus1';
+        for(var i in points){
+            var n = args[i];
+            for(var j = 0; j < n; j++){
+                var img = $('<img src="images/tokens/' + points[i] + '.png" />');
+                img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
+                var rot = (Math.random() - 0.5) * 100;
+                this.militaryDiv.append(img);
+            }
+            if(n > 0) this.militaryDiv.append('<br />');
+        }
+    },
+
+    moveToBoard: function(card, animate){
+        var state = card.data('state');
+        card.data('state', '');
+        card.addClass('played').attr('id', '');
+        if (state == 'trashing') {
+            card.animate({
+                left: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
+                bottom: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
+                opacity: 0,
+            }, 500, function(){ $(this).remove(); });
+            return;
+        } else if (state == 'building') {
+            card.animate({
+                // todo: animate to board where wonder is
+            }).fadeOut(200);
+            this.buildWonderStage();
+            return;
+        }
+
+        var infoPos = this.wonderDiv.offset();
+        var cardColor = card.data('cardInfo').color;
+        var index = this.game.colorOrder.indexOf(cardColor);
+        var numInColor = 0;
+        for(i in this.game.cardsPlayed)
+            if(this.game.cardsPlayed[i].data('cardInfo').color == cardColor) numInColor++;
+
+        card.find('.options, h1').css('display', 'none');
+        card.css('z-index', 100 - numInColor);
+        var opts = {
+            left: infoPos.left / this.game.scale + index * 135,
+            bottom: ($('#game').height() - infoPos.top - 155) * this.game.scale + numInColor * 40 - (cardColor == 'blue' ? 93 : 0),
+            width: this.game.cardWidth,
+            height: this.game.cardHeight,
+            opacity: 1,
+            rotate: 0
+        };
+
+        if (animate)
+            card.animate(opts);
+        else
+            card.css(opts);
+
+        this.game.cardsPlayed.push(card);
+        card.removeClass('highlighted').removeClass('selected');
+    },
+
+    buildWonderStage: function() {
+        this.wonderStage++;
+        var check = $('<div class="check stage' + this.wonderStage + '"></div>');
+        this.wonderDiv.append(check);
+        var offset = 48 + 240 * (this.wonderStage - 1);
+        if(this.name == "gizah" && this.wonderSide == 'b'){
+            offset = this.wonderStage == 1 ? 3 : 208 * (this.wonderStage - 1);
+        } else if(this.name == "rhodos" && this.wonderSide == 'b'){
+            offset = 283 + 240 * (this.wonderStage - 1);
+        }
+        check.css('left', offset);
+        check.fadeIn(200);
+    }
+}
+
 var SevenWonders = function(socket, args){
     this.wonder = args.wonder;
     this.players = args.plinfo;
@@ -10,7 +134,6 @@ var SevenWonders = function(socket, args){
     this.leftPlayed = {};
     this.rightPlayed = {};
     this.neighbors = args.neighbors;
-    this.wonderSide = args.wonderside || 'a';
     this.wonderStage = 1;
     this.colorOrder = ['brown', 'grey', 'yellow', 'red', 'green', 'purple', 'blue'];
     this.cardWidth = 123;
@@ -18,6 +141,7 @@ var SevenWonders = function(socket, args){
     this.hasfree = false; // has a free card from olympia's wonder
     this.hastwo = false;  // can play second card from babylon's wonder
     this.scale = 1;
+    this.gameDiv = $('#game');
 
     var self = this;
 
@@ -48,24 +172,39 @@ var SevenWonders = function(socket, args){
         $('#setup').append('<img src="' + imgname + 'A.png" /><img src="' + imgname + 'B.png" />')
         $('#setup img').click(function(){
             var isA = $(this).attr('src').indexOf('A') > -1;
-            self.wonderSide = isA ? 'a' : 'b';
-            $('#wonder').css('background', 'url(images/wonders/' + self.wonder.name.toLowerCase() + self.wonderSide + '.png) no-repeat center center');
+            self.wonder = new WonderBoard({
+                name: args.wonder.name,
+                coins: parseInt(args.coins),
+                military: args.military,
+                wonderside: isA ? 'a' : 'b',
+                stage: 0,
+                game: self
+            });
+            $('#game').append(self.wonder.wonderDiv);
+
             self.send(isA, 'wonderside');
             $('#setup img').unbind('click');
             $('#setup-container').fadeOut(200, function(){
                 $(this).css('display', 'none');
                 // show waiting screen for until hand pops up
             })
-        })
+        });
     }
-
-    this.updateCoins();
 
     // Puts cards back in their place if player is rejoining the game (e.g. refreshing)
     if(args.rejoin == true){
-        $('#wonder').css('background', 'url(images/wonders/' + this.wonder.name.toLowerCase() + this.wonderSide + '.png) no-repeat center center');
-        this.updateMilitary(args.military);
+        this.wonder = new WonderBoard({
+            name: args.wonder.name,
+            coins: parseInt(args.coins),
+            military: args.military,
+            wonderside: args.wonderside || 'a',
+            stage: args.wonder.stage,
+            game: this
+        });
+        $('#game').append(this.wonder.wonderDiv);
+
         this.showWonderResources();
+
         var i;
         for (i = 0; i < args.leftcards.length; i++)
             this.updateColumn('left', args.leftcards[i].color,
@@ -227,43 +366,6 @@ SevenWonders.prototype = {
         this.trashCardsDisplayed = [];
     },
 
-    // Puts the coin images on the board
-    updateCoins: function() {
-        var golds = Math.floor(this.coins / 3);
-        var silvers = this.coins % 3;
-        $('#coins').html('');
-        for(var i = 0; i < silvers; i++){
-            var rot = (Math.random() - 0.5) * 300;
-            var img = $('<img src="images/tokens/coin1.png" class="silver" />');
-            img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
-            $('#coins').append(img);
-        }
-        $('#coins').append('<br />');
-
-        for(var i = 0; i < golds; i++){
-            var rot = (Math.random() - 0.5) * 300;
-            var img = $('<img src="images/tokens/coin3.png" class="gold" />');
-            img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
-            $('#coins').append(img);
-        }
-    },
-
-    // Puts the coin tokens on the board
-    updateMilitary: function(args) {
-        $('#military').html('');
-        var points = {1 : 'victory1', 3: 'victory3', 5: 'victory5'};
-        points[-1] = 'victoryminus1';
-        for(var i in points){
-            var n = args[i];
-            for(var j = 0; j < n; j++){
-                var img = $('<img src="images/tokens/' + points[i] + '.png" />');
-                img.css({'-webkit-transform': 'rotate(' + rot + 'deg)', '-moz-transform': 'rotate(' + rot + 'deg)'});
-                var rot = (Math.random() - 0.5) * 100;
-                $('#military').append(img);
-            }
-            if(n > 0) $('#military').append('<br />');
-        }
-    },
 
     // Inserts cards into the appropriate position on the left or right columns
     updateColumn: function(side, color, img, speed) {
@@ -295,70 +397,6 @@ SevenWonders.prototype = {
         img.css('z-index', 1000 * (8 - this.colorOrder.indexOf(color)) - length);
         cardsPlayed[color].push(img.get(0));
         img.animate({opacity: 1}, speed);
-    },
-
-    // Show when a wonder stage has been built (currently use checks instead of the cards)
-    // todo: have some indicator of which cards were used to build wonders
-    buildWonderStage: function() {
-        var check = $('<div class="check stage' + this.wonderStage + '"></div>');
-        $('#wonder').append(check);
-        var offset = 48 + 240 * (this.wonderStage - 1);
-        if(this.wonder.name == "gizah" && this.wonderSide == 'b'){
-            offset = this.wonderStage == 1 ? 3 : 208 * (this.wonderStage - 1);
-        } else if(this.wonder.name == "rhodos" && this.wonderSide == 'b'){
-            offset = 283 + 240 * (this.wonderStage - 1);
-        }
-        check.css('left', offset);
-        check.fadeIn(200);
-
-        this.wonderStage++;
-    },
-
-    // Given a selected card, move it to above the wonder
-    moveToBoard: function(card, animate) {
-        var state = card.data('state');
-        card.data('state', '');
-        card.addClass('played').attr('id', '');
-        if (state == 'trashing') {
-            card.animate({
-                left: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
-                bottom: (Math.random() > 0.5 ? '-=' : '+=') + (Math.random() * 200),
-                opacity: 0,
-            }, 500, function(){ $(this).remove(); });
-            return;
-        } else if (state == 'building') {
-            card.animate({
-                // todo: animate to board where wonder is
-            }).fadeOut(200);
-            this.buildWonderStage();
-            return;
-        }
-
-        var infoPos = $('#wonder').offset();
-        var cardColor = card.data('cardInfo').color;
-        var index = this.colorOrder.indexOf(cardColor);
-        var numInColor = 0;
-        for(i in this.cardsPlayed)
-            if(this.cardsPlayed[i].data('cardInfo').color == cardColor) numInColor++;
-
-        card.find('.options, h1').css('display', 'none');
-        card.css('z-index', 100 - numInColor);
-        var opts = {
-            left: infoPos.left / this.scale + index * 135,
-            bottom: ($('#game').height() - infoPos.top - 155) * this.scale + numInColor * 40 - (cardColor == 'blue' ? 93 : 0),
-            width: this.cardWidth,
-            height: this.cardHeight,
-            opacity: 1,
-            rotate: 0
-        };
-
-        if (animate)
-            card.animate(opts);
-        else
-            card.css(opts);
-
-        this.cardsPlayed.push(card);
-        card.removeClass('highlighted').removeClass('selected');
     },
 
     // Create a card div with options and slider
@@ -542,9 +580,9 @@ SevenWonders.prototype = {
                 $('#game').css('overflow', 'hidden');
                 $('.card').each(function(){
                     if($(this).hasClass('ignore')) return;
-                    var deg = (cardIndex(this) + 0.5 - numCards / 2) * 8;
+                    var deg = (cardIndex(this) + 0.5 - numCards / 2) * 6;
                     $(this).css({
-                        'left': $('#wonder').offset().left / self.scale + $('#wonder').width() / 2 - 75,
+                        'left': self.wonder.wonderDiv.offset().left / self.scale + self.wonder.wonderDiv.width() / 2 - 75,
                         'bottom': -200
                     });
                     $(this).rotate(deg);
@@ -620,12 +658,11 @@ SevenWonders.prototype = {
                 break;
 
             case 'coins':
-                this.coins = args.data;
-                this.updateCoins();
+                this.wonder.updateCoins(args.data);
                 break;
 
             case 'military':
-                this.updateMilitary(args);
+                this.wonder.updateMilitary(args);
                 break;
 
             case 'possibilities':
