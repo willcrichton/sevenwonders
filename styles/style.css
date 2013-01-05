@@ -9,7 +9,7 @@
     font-style: normal;
 }
 
-* { margin: 0; padding: 0; }
+* { margin: 0; padding: 0; outline: 0; }
 
 body {
     background: #E7E3D3 url(../images/paper.jpg) no-repeat center top;
@@ -221,12 +221,15 @@ h1, h2, h3 {
             -webkit-transform: rotate(90deg);
             -moz-transform: rotate(90deg);
             position: absolute;
-            top: 47%;
+            top: 44%;
+            width: 730px;
             color: white;
             text-shadow: 0 0 1px black;
             font-size: 60px;
-            left: -25px;
+            left: -300px;
+            text-align: center;
             opacity: 0.4;
+            line-height: 1em;
         }
 
         .info {
@@ -279,10 +282,6 @@ h1, h2, h3 {
             background: #D1BB9F;
         }
 
-        .neighbor.left h1 {
-            left: -10px;
-        }
-
         .neighbor.right {
             border-left: 2px solid #C3BBAB;
             background: rgba(196, 187, 172, 0.9);
@@ -296,7 +295,6 @@ h1, h2, h3 {
         .neighbor.right h1 {
             -webkit-transform: rotate(-90deg);
             -moz-transform: rotate(-90deg);
-            left: -34px;
         }
 
         .neighbor .card {
@@ -478,7 +476,7 @@ h1, h2, h3 {
     #cardselect {
         display: none;
         overflow: auto;
-
+        min-width: 1340px;
         margin: 0;
         top: 0;
         left: 0;

@@ -235,6 +235,7 @@ class Player {
             "plinfo" => $playerInfo,
             "military" => $this->military->json(),
             "neighbors" => array('left' => array(
+                                    'name' => $this->leftPlayer->_name,
                                     'id' => $this->leftPlayer->id(),
                                     'resource' => isset($this->leftPlayer->wonder) ? 
                                                   $this->leftPlayer->wonder['resource']->json() : '',
@@ -242,6 +243,7 @@ class Player {
                                     'wonder' => $this->leftPlayer->wonderName
                                  ),
                                  'right' => array(
+                                    'name' => $this->rightPlayer->_name,
                                     'id' => $this->rightPlayer->id(),
                                     'resource' => isset($this->rightPlayer->wonder) ? 
                                                   $this->rightPlayer->wonder['resource']->json() : '',
