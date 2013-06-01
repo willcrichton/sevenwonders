@@ -1,2 +1,3 @@
 *.key filter=git-crypt diff=git-crypt
-images/* filter=git-crypt diff=git-crypt
+*.jpg filter=git-crypt diff=git-crypt
+*.png filter=git-crypt diff=git-crypt
