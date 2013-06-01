@@ -544,7 +544,7 @@ SevenWonders.prototype = {
                 }, 1000);
 
                 // card blow up animation (on click)
-                $('.card').click(function(e){
+                $('.card:not(.ignore)').click(function(e){
                     e.stopPropagation();
                     // don't let the player blow up cards which are moving currently or shouldn't be blown up
                     if($(this).is(':animated') || $(this).hasClass('ignore')) return;
