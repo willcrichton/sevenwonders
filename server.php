@@ -87,6 +87,7 @@ class WonderServer implements IWebSocketServerObserver{
             case 'newgame':
                 if ($user->game() != null)
                     return;
+
                 // ERRORS NOT SHOWING ON CLIENT: FIX FIX FIX
                 if($arr['name'] == '')
                     return $user->send('error', 'Game needs a valid name');
@@ -135,6 +136,7 @@ class WonderServer implements IWebSocketServerObserver{
     public function onDisconnect(IWebSocketConnection $conn){
         if (!isset($this->conns[$conn->getId()]))
             return;
+
         $user = $this->conns[$conn->getId()];
         unset($this->conns[$conn->getId()]);
         $this->say("{$user->id()} disconnected");

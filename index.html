@@ -133,6 +133,8 @@
 
             function waitScreen(){
                 $('#lobby').fadeOut(500, function(){
+                    $('#pregame').css('display', 'block');
+                    $('#lobby').css('display', 'none');
                     $('#waiting').fadeIn(1000);
                     $('#pregame').animate({ height: $('#waiting').outerHeight() }, 500, function(){
                         $(this).css('height', 'auto');
@@ -181,9 +183,9 @@
                             <tr>
                                 <td># Players:</td>
                                 <td>
-                                    <input type='range' name='players' min='1'
-                                           max='7' value='1' />
-                                    <span id='numplayers'>1</span>
+                                    <input type='range' name='players' min='3'
+                                           max='7' value='3' />
+                                    <span id='numplayers'>3</span>
                                 </td>
                             </tr>
                             <tr>

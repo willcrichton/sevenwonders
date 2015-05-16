@@ -528,20 +528,17 @@ SevenWonders.prototype = {
                     $(this).data('rotation', deg);
                 })
 
-                // card dealing animation (on a timeout to avoid browser issues)
-                setTimeout(function(){
-                    $('.card:not(.ignore)').each(function(){
-                        var index = cardIndex(this);
-                        // send card to appropriate position on the main board
-                        $(this).animate({
-                            'bottom': '+=' + ((Math.pow(index + 0.5 - numCards / 2, 2) * -6) + 635),
-                            'left': '+=' + (index + 0.5 - numCards / 2) * 120
-                        }, 1500, 'easeOutExpo', function(){
-                            // we overflow hidden when dealing to avoid troubles where cards start outside the screen
-                            $('#game').css("overflow", "auto");
-                        });
+                $('.card:not(.ignore)').each(function(){
+                    var index = cardIndex(this);
+                    // send card to appropriate position on the main board
+                    $(this).animate({
+                        'bottom': '+=' + ((Math.pow(index + 0.5 - numCards / 2, 2) * -6) + 635),
+                        'left': '+=' + (index + 0.5 - numCards / 2) * 120
+                    }, 1500, 'easeOutExpo', function(){
+                        // we overflow hidden when dealing to avoid troubles where cards start outside the screen
+                        $('#game').css("overflow", "auto");
                     });
-                }, 1000);
+                });
 
                 // card blow up animation (on click)
                 $('.card:not(.ignore)').click(function(e){
