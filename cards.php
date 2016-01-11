@@ -99,7 +99,7 @@ class Card {
             if (getenv('DEBUG')) {
                 $card->numPlayers = 1; // use all cards in development
             }
-
+			
             $cards[] = $card;
         }
 
@@ -274,10 +274,10 @@ class Card {
                             $total += $mult * $pl->wonderStage;
                             break;
                         // $mult points for each brown/grey/blue card
-                        case 'brown,grey,blue':
+                        case 'brown,grey,purple':
                             foreach (explode(',', $color) as $subcolor) {
                                 foreach ($pl->cardsPlayed as $c) {
-                                    if ($c->getColor() == $color)
+                                    if ($c->getColor() == $subcolor)
                                         $total += $mult;
                                 }
                             }
@@ -295,7 +295,7 @@ class Card {
 
             case Card::BLUE:
                 return intval($this->command);
-        }
+				}
 
         return 0;
     }
