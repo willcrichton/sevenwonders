@@ -374,11 +374,7 @@ class Player {
                 $this->canStealGuild = true;
                 break;
             case 'discard':  // halikarnassus's play from the discard pile
-                if(count($this->_game->discard) > 0){
-                    $tojson = function($a){ return $a->json(); };
-                    $this->state = Player::USINGDISCARD;
-                    $this->send('discard', array('cards' => array_map($tojson, $this->_game->discard)));
-                }
+                $this->state = Player::USINGDISCARD;                
                 break;
             case 'play2':    // babylon's play both cards at the end of a hand
                 $this->canPlayTwoBuilt = true;
