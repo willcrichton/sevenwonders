@@ -180,8 +180,15 @@ SevenWonders.prototype = {
                 if(this.trashCardsDisplayed[i].data('cardInfo').color == cardColor) numInColor++; 
 
             carddiv.find('.options, h1').css('display', 'none');
-            var left = isDiscard ? 10 : 168 + index * 136;
-            var bottom = (isDiscard || cardColor == 'blue') ? 10 : 95 + numInColor * 40;
+			if ( isDiscard ) {
+				var left = 10 + index * 136;
+				var bottom = 10 + numInColor * 40;
+			} else {
+				var left = 168 + index * 136;
+				var bottom = (cardColor == 'blue') ? 10 : 95 + numInColor * 40;
+			}
+            //var left = isDiscard ? 10 : 168 + index * 136;
+            //var bottom = (isDiscard || cardColor == 'blue') ? 10 : 95 + numInColor * 40;
             carddiv.css({
                 'z-index': 2000 - numInColor,
                 'left': left,
@@ -280,7 +287,7 @@ SevenWonders.prototype = {
                         left: offset.left
                     });
                     $('#game').append(newCard);
-                    self.moveToBoard(newCard, true);
+                    self.wonder.moveToBoard(newCard, true);
                     self.hideCardSelect();
                     return false;
                 });
